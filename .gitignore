@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.vercel/
+playwright-report/
+test-results/
+*.log
+*.tsbuildinfo
+public/ffmpeg/
+public/vendor/pdfjs/
+public/licenses/

@@ -1,0 +1,220 @@
+import {
+  ImageDown,
+  Images,
+  Files,
+  Scissors,
+  FileImage,
+  FileType2,
+  FileDown,
+  Film,
+  Clapperboard,
+  Music2,
+  Braces,
+  Binary,
+  ListFilter,
+  Table2,
+  Ruler,
+  Clock3,
+  Calculator,
+  QrCode,
+  Fingerprint,
+  KeyRound,
+  Palette,
+  Link2,
+  Image,
+  FileText,
+  Video,
+  Code2,
+  ArrowLeftRight,
+  Terminal,
+  type LucideIcon,
+} from 'lucide-react';
+export interface ToolMeta {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  keywords: string[];
+  icon: LucideIcon;
+  featured?: boolean;
+  mode: 'local' | 'link';
+}
+export const categories: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: 'image', label: '图片工具', icon: Image },
+  { id: 'pdf', label: 'PDF 工具', icon: FileText },
+  { id: 'media', label: '视频音频', icon: Video },
+  { id: 'text', label: '文本编码', icon: Code2 },
+  { id: 'convert', label: '计算换算', icon: ArrowLeftRight },
+  { id: 'dev', label: '开发工具', icon: Terminal },
+  { id: 'link', label: '链接解析', icon: Link2 },
+];
+const t = (
+  id: string,
+  name: string,
+  description: string,
+  category: string,
+  icon: LucideIcon,
+  keywords: string[],
+  featured = false,
+  mode: 'local' | 'link' = 'local',
+): ToolMeta => ({ id, name, description, category, icon, keywords, featured, mode });
+export const tools: ToolMeta[] = [
+  t(
+    'image-compress',
+    '图片压缩',
+    '更轻的文件，同样精彩的画面。',
+    'image',
+    ImageDown,
+    ['jpg', 'png', 'webp', '压缩', '批量', '图片'],
+    true,
+  ),
+  t('image-convert', '图片格式转换', 'PNG、JPG、WebP、AVIF，自在转换。', 'image', Images, [
+    '格式',
+    '转换',
+    'avif',
+    'png',
+    'jpg',
+    'webp',
+  ]),
+  t(
+    'pdf-merge',
+    'PDF 合并',
+    '把零散的文档，整理成一份完整。',
+    'pdf',
+    Files,
+    ['合并', '拼接', '文档'],
+    true,
+  ),
+  t('pdf-split', 'PDF 拆分', '按页码拆分，只留下你需要的部分。', 'pdf', Scissors, [
+    '拆分',
+    '提取',
+    '分页',
+  ]),
+  t('pdf-to-images', 'PDF 转图片', '让每一页，都成为清晰的图片。', 'pdf', FileImage, [
+    'jpg',
+    'png',
+    '渲染',
+    '导出',
+  ]),
+  t('images-to-pdf', '图片转 PDF', '多张图片，一份井然有序的文档。', 'pdf', FileType2, [
+    '图片',
+    'pdf',
+    '合成',
+  ]),
+  t('pdf-compress', 'PDF 压缩', '给文档减负，压缩方式由你决定。', 'pdf', FileDown, [
+    '压缩',
+    '优化',
+    '文档',
+  ]),
+  t(
+    'video-frames',
+    '视频转图片帧',
+    '从流动的画面中，留下每个精彩瞬间。',
+    'media',
+    Film,
+    ['视频', '抽帧', '截图', '截帧'],
+    true,
+  ),
+  t('video-gif', '视频转 GIF', '截取一小段，变成会动的表达。', 'media', Clapperboard, [
+    'gif',
+    '动图',
+    '片段',
+  ]),
+  t('extract-audio', '提取音频', '留下声音，让视频里的旋律独立播放。', 'media', Music2, [
+    'mp3',
+    'wav',
+    '音频',
+    '提取',
+  ]),
+  t(
+    'json',
+    'JSON 格式化',
+    '整理、校验、压缩，结构一目了然。',
+    'text',
+    Braces,
+    ['json', '格式化', '校验', '压缩'],
+    true,
+  ),
+  t('base64', 'Base64 编解码', '文本与文件，轻松编码和还原。', 'text', Binary, [
+    'base64',
+    '编码',
+    '解码',
+    '文件',
+  ]),
+  t('text-lines', '文本整理', '去重、排序、去空行，让文字更整齐。', 'text', ListFilter, [
+    '去重',
+    '排序',
+    '空行',
+    '文本',
+  ]),
+  t('csv-json', 'CSV / JSON 互转', '表格与结构化数据，双向自由转换。', 'text', Table2, [
+    'csv',
+    'json',
+    '表格',
+    '转换',
+  ]),
+  t('units', '单位换算', '长度、重量、温度，常用单位即刻换算。', 'convert', Ruler, [
+    '单位',
+    '长度',
+    '重量',
+    '温度',
+    '面积',
+    '体积',
+    '速度',
+    '存储',
+  ]),
+  t('timestamp', '时间戳转换', '秒与毫秒，和熟悉的日期互相转换。', 'convert', Clock3, [
+    '时间戳',
+    '日期',
+    '秒',
+    '毫秒',
+  ]),
+  t('radix', '进制转换', '二、八、十、十六进制，准确互转。', 'convert', Calculator, [
+    '进制',
+    '二进制',
+    '十六进制',
+    'bigint',
+  ]),
+  t(
+    'qr',
+    '二维码生成',
+    '把文字和链接，变成可以扫描的图案。',
+    'dev',
+    QrCode,
+    ['二维码', 'qrcode', '链接'],
+    true,
+  ),
+  t('hash', 'Hash 生成', '文本与文件的数字指纹，在本地计算。', 'dev', Fingerprint, [
+    'hash',
+    'md5',
+    'sha1',
+    'sha256',
+    '哈希',
+  ]),
+  t('random', 'UUID / 随机字符串', '安全随机，生成属于此刻的独一无二。', 'dev', KeyRound, [
+    'uuid',
+    '密码',
+    '随机',
+    '字符串',
+  ]),
+  t('color', '颜色格式转换', 'HEX、RGB、HSL，让灵感精准表达。', 'dev', Palette, [
+    '颜色',
+    'hex',
+    'rgb',
+    'hsl',
+    '色彩',
+  ]),
+  t(
+    'douyin',
+    '抖音链接解析',
+    '解析公开视频与图集，清晰展示可用结果。',
+    'link',
+    Link2,
+    ['抖音', '分享', '视频', '下载'],
+    false,
+    'link',
+  ),
+];
+export function getTool(id: string) {
+  return tools.find((tool) => tool.id === id);
+}

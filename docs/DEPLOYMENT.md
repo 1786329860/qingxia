@@ -34,11 +34,13 @@
 | 名称                        | 从哪里取得 / 用途                                        |
 | --------------------------- | -------------------------------------------------------- |
 | `SUPABASE_URL`              | Supabase Project Settings / API 中的项目 HTTPS URL       |
-| `SUPABASE_SERVICE_ROLE_KEY` | 项目的 legacy `service_role` API 密钥，仅服务端使用      |
+| `SUPABASE_SERVICE_ROLE_KEY` | 项目的服务端 Secret API key（`sb_secret_...`），或仍有效的 legacy `service_role` 密钥，仅服务端使用 |
 | `ADMIN_PASSWORD`            | 自己设置的站长密码，至少 12 字符，建议使用密码管理器生成 |
 | `ADMIN_SESSION_SECRET`      | 至少 32 个随机字符，用于会话签名、匿名散列和限流         |
 
 这些值只填到服务商的安全环境变量设置中，不发到聊天，不提交 Git，也不使用 `VITE_` 前缀。更换 `ADMIN_SESSION_SECRET` 会使已有后台会话失效，并改变匿名散列。
+
+环境变量名称保持不变。现有 Supabase 客户端支持 Secret API key，无需改写应用。若已禁用 legacy JWT API keys，必须使用有效的 Secret API key；创建新密钥本身不会撤销旧密钥，需在 Supabase 的 API Keys 页面单独禁用旧密钥。
 
 重新部署后访问 `/admin`，输入站长密码。没有配置时只显示登录页和明确的配置错误；“预览统计界面”始终是单独标注的示例。
 

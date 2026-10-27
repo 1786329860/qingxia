@@ -3,12 +3,14 @@ import { Download, Link2, ExternalLink, LoaderCircle } from 'lucide-react';
 import { ActionButton, Field, Notice, ResultBox, ErrorNotice } from '../components/ToolUI';
 import { downloadBlob, errorMessage } from '../lib/files';
 import { trackToolUse } from '../lib/analytics';
+import { downloadPublicMedia, type DownloadMedia } from '../lib/douyin-download';
+import { extractShareURL } from '../../api/_lib/douyin';
 interface Result {
   title: string;
   author: string;
   cover: string | null;
   kind: 'video' | 'images';
-  items: { url: string; type: 'image' | 'video' }[];
+  items: DownloadMedia[];
   notice: string;
 }
 export default function DouyinTool() {
@@ -17,12 +19,14 @@ export default function DouyinTool() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const [downloading, setDownloading] = useState<number | null>(null);
+  const [downloadStatus, setDownloadStatus] = useState('');
   const abort = useRef<AbortController | null>(null);
   useEffect(() => () => abort.current?.abort(), []);
   async function resolve() {
     if (busy) return;
     setBusy(true);
     setError('');
+    setDownloadStatus('');
     setResult(null);
     const controller = new AbortController();
     abort.current = controller;
@@ -31,7 +35,7 @@ export default function DouyinTool() {
       const response = await fetch('/api/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: input }),
+        body: JSON.stringify({ url: extractShareURL(input).href }),
         signal: controller.signal,
       });
       const data = await response
@@ -59,50 +63,18 @@ export default function DouyinTool() {
     if (!result || downloading !== null) return;
     setDownloading(index);
     setError('');
+    setDownloadStatus('');
     const controller = new AbortController();
     abort.current = controller;
     const timer = setTimeout(() => controller.abort('timeout'), 90000);
     try {
-      const item = result.items[index];
-      const response = await fetch(item.url, {
-        signal: controller.signal,
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
+      const media = await downloadPublicMedia(result.items[index], controller.signal, (attempt) => {
+        setDownloadStatus(attempt ? '正在尝试作品提供的备用下载地址…' : '正在读取媒体文件…');
       });
-      if (!response.ok) throw new Error('媒体直链已失效或平台拒绝下载，请重新解析。');
-      const limit = 200 * 1024 * 1024;
-      const expected = Number(response.headers.get('content-length'));
-      if (expected > limit) throw new Error('媒体超过 200 MB 浏览器下载上限。');
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('浏览器无法读取媒体内容。');
-      const chunks: Uint8Array[] = [];
-      let size = 0;
-      try {
-        while (true) {
-          const chunk = await reader.read();
-          if (chunk.done) break;
-          size += chunk.value.byteLength;
-          if (size > limit) throw new Error('媒体超过 200 MB 浏览器下载上限。');
-          chunks.push(chunk.value);
-        }
-      } finally {
-        await reader.cancel().catch(() => {});
-      }
-      const type = response.headers.get('content-type')?.split(';')[0] || '';
-      if (!(item.type === 'video' ? type.startsWith('video/') : type.startsWith('image/')))
-        throw new Error('平台返回的不是可确认的媒体文件，已停止下载。');
-      const extension =
-        type === 'image/webp'
-          ? 'webp'
-          : type === 'image/png'
-            ? 'png'
-            : type === 'image/jpeg'
-              ? 'jpg'
-              : type === 'video/webm'
-                ? 'webm'
-                : 'mp4';
-      downloadBlob(new Blob(chunks, { type }), `轻匣-抖音-${index + 1}.${extension}`);
+      downloadBlob(media.blob, `轻匣-抖音-${index + 1}.${media.extension}`);
+      setDownloadStatus('下载已发起，请在浏览器中查看文件。');
     } catch (e) {
+      setDownloadStatus('');
       const message = errorMessage(e);
       setError(
         controller.signal.aborted
@@ -154,12 +126,18 @@ export default function DouyinTool() {
             setInput('');
             setResult(null);
             setError('');
+            setDownloadStatus('');
           }}
         >
           清空
         </button>
       </div>
       <ErrorNotice error={error} />
+      {downloadStatus && (
+        <p className="muted" role="status">
+          {downloadStatus}
+        </p>
+      )}
       {result && (
         <ResultBox title="解析结果">
           <h2>{result.title}</h2>

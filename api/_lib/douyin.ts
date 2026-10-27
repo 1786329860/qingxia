@@ -3,7 +3,7 @@ export interface ResolvedMedia {
   author: string;
   cover: string | null;
   kind: 'video' | 'images';
-  items: { url: string; type: 'video' | 'image' }[];
+  items: { url: string; type: 'video' | 'image'; fallbackUrls?: string[] }[];
 }
 export type ResolveStage = 'input' | 'redirect' | 'page' | 'metadata';
 export class DouyinResolveError extends Error {
@@ -23,6 +23,7 @@ const shareHosts = new Set([
   'douyin.com',
   'www.iesdouyin.com',
   'iesdouyin.com',
+  'jingxuan.douyin.com',
 ]);
 const mediaRoots = [
   'douyinvod.com',
@@ -250,7 +251,92 @@ function parsedHydration(html: string): unknown[] {
   }
   return values;
 }
+function record(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+function jingxuanSources(html: string): string[] {
+  const sources: string[] = [];
+  for (const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+    const assignment = /\bwindow\._SSR_DATA\s*=\s*/.exec(script[1]);
+    if (!assignment) continue;
+    const start = assignment.index + assignment[0].length;
+    if (script[1][start] !== '{') continue;
+    const source = jsonObject(script[1], start);
+    if (source) sources.push(source);
+    if (sources.length >= 4) break;
+  }
+  return sources;
+}
+function jingxuanDetail(data: unknown): Record<string, unknown> | null {
+  // Only the current detail is authoritative. The same SSR contains other works.
+  const store = record(record(record(data)?.data)?.storeState);
+  const videoData = record(record(store?.detail)?.videoData);
+  return record(videoData?.result);
+}
+function parsedJingxuan(html: string): unknown[] {
+  const parsed: unknown[] = [];
+  for (const source of jingxuanSources(html)) {
+    try {
+      parsed.push(JSON.parse(source));
+    } catch {
+      /* Public JSON only: never execute the page's scripts. */
+    }
+  }
+  return parsed;
+}
+function fromJingxuan(data: unknown, expectedID?: string): ResolvedMedia | null {
+  if (!expectedID) return null;
+  const item = jingxuanDetail(data);
+  if (!item || item.gid !== expectedID || typeof item.video_model !== 'string') return null;
+  if (item.video_model.length > 512_000) return null;
+  let model: Record<string, unknown> | null;
+  try {
+    model = record(JSON.parse(item.video_model));
+  } catch {
+    return null;
+  }
+  if (
+    !model ||
+    typeof item.video_id !== 'string' ||
+    !item.video_id ||
+    item.video_id.length > 256 ||
+    model.video_id !== item.video_id ||
+    !Array.isArray(model.video_list)
+  )
+    return null;
+  // H.264 is the browser-compatible variant verified against the public page.
+  // Keep its original URLs and quality; do not rewrite watermark/signature paths.
+  for (const value of model.video_list.slice(0, 40)) {
+    const variant = record(value);
+    if (!variant || record(variant.video_meta)?.codec_type !== 'h264') continue;
+    const urls = [
+      ...new Set([safeMediaURL(variant.backup_url), safeMediaURL(variant.main_url)]),
+    ].filter((url): url is string => !!url);
+    if (!urls.length) continue;
+    const author = record(item.media_user);
+    return {
+      title: text(item.title, '抖音分享内容'),
+      author: text(author?.screen_name || author?.nickname || author?.name, '作者信息未提供'),
+      cover: safeMediaURL(item.cover_image_url),
+      kind: 'video',
+      items: [
+        {
+          url: urls[0],
+          type: 'video',
+          ...(urls.length > 1 ? { fallbackUrls: urls.slice(1, 3) } : {}),
+        },
+      ],
+    };
+  }
+  return null;
+}
 export function parseDouyinHTML(html: string, expectedID?: string): ResolvedMedia | null {
+  for (const value of parsedJingxuan(html)) {
+    const found = fromJingxuan(value, expectedID);
+    if (found) return found;
+  }
   for (const value of parsedHydration(html)) {
     const found = findItem(value, expectedID);
     if (found) return found;
@@ -286,7 +372,7 @@ export function unresolvedPageError(html: string, expectedID?: string): DouyinRe
       '分享内容不存在、已删除或不可见，请在抖音官方页面确认。',
       404,
     );
-  if (!hydrationSources(html).length)
+  if (!hydrationSources(html).length && !jingxuanSources(html).length)
     return new DouyinResolveError(
       'PUBLIC_DATA_UNAVAILABLE',
       'page',
@@ -299,14 +385,22 @@ export function unresolvedPageError(html: string, expectedID?: string): DouyinRe
       '分享页未提供可确认的作品编号，无法安全区分分享内容和推荐作品。请使用具体作品的原始分享链接。',
     );
   const data = parsedHydration(html);
-  if (!data.length)
+  const jingxuanData = parsedJingxuan(html);
+  if (!data.length && !jingxuanData.length)
     return new DouyinResolveError(
       'PAGE_FORMAT_UNSUPPORTED',
       'metadata',
       '公开页面的数据格式暂不支持，未取得可确认的媒体信息。请稍后重试。',
     );
+  const targetJingxuan = jingxuanData.some((value) => jingxuanDetail(value)?.gid === expectedID);
   const queue = [...data];
   let visited = 0;
+  if (targetJingxuan)
+    return new DouyinResolveError(
+      'MEDIA_UNAVAILABLE',
+      'metadata',
+      '已定位分享作品，但公开页面没有提供本站可用的媒体直链，无法开始下载。',
+    );
   while (queue.length && visited++ < 15000) {
     const value = queue.shift();
     if (!value || typeof value !== 'object') continue;
@@ -327,17 +421,26 @@ export function unresolvedPageError(html: string, expectedID?: string): DouyinRe
     '公开页面没有目标分享作品的数据。为避免误取推荐内容，本次不返回其他作品。',
   );
 }
-export async function fetchSharePage(initial: URL, fetcher: typeof fetch = fetch) {
+interface PageFetchBudget {
+  deadline: number;
+  requestsRemaining: number;
+}
+export async function fetchSharePage(
+  initial: URL,
+  fetcher: typeof fetch = fetch,
+  budget: PageFetchBudget = { deadline: Date.now() + 18000, requestsRemaining: 5 },
+) {
   let url = initial;
-  const deadline = Date.now() + 18000;
   try {
-    for (let hop = 0; hop < 5; hop++) {
+    while (budget.requestsRemaining > 0) {
       assertShareURL(url);
-      const remaining = deadline - Date.now();
+      const remaining = budget.deadline - Date.now();
       if (remaining < 1000)
         throw new DouyinResolveError('PLATFORM_TIMEOUT', 'page', '平台响应超时，请稍后再试。', 504);
+      budget.requestsRemaining--;
       const response = await fetcher(url, {
         redirect: 'manual',
+        credentials: 'omit',
         signal: AbortSignal.timeout(Math.min(remaining, 7000)),
         headers: {
           'User-Agent':
@@ -453,4 +556,69 @@ export async function fetchSharePage(initial: URL, fetcher: typeof fetch = fetch
       502,
     );
   }
+}
+export async function resolveDouyinShare(initial: URL, fetcher: typeof fetch = fetch) {
+  const budget = { deadline: Date.now() + 18000, requestsRemaining: 5 };
+  const page = await fetchSharePage(initial, fetcher, budget);
+  const initialID = shareItemID(initial);
+  const finalID = shareItemID(page.url);
+  if (initialID && finalID && initialID !== finalID)
+    throw new DouyinResolveError(
+      'SHARED_ITEM_UNAVAILABLE',
+      'metadata',
+      '分享链接跳转后的作品编号不一致，无法确认目标内容。',
+    );
+  const expectedID = finalID || initialID;
+  const originalError = unresolvedPageError(page.html, expectedID);
+  const restricted = new Set([
+    'PLATFORM_CHALLENGE',
+    'PLATFORM_LOGIN_REQUIRED',
+    'CONTENT_UNAVAILABLE',
+  ]);
+  if (restricted.has(originalError.code)) throw originalError;
+  if (!expectedID) throw originalError;
+  const result = parseDouyinHTML(page.html, expectedID);
+  if (result) return result;
+  const canTryPublicDetail = new Set([
+    'PUBLIC_DATA_UNAVAILABLE',
+    'PAGE_FORMAT_UNSUPPORTED',
+    'MEDIA_UNAVAILABLE',
+    'SHARED_ITEM_UNAVAILABLE',
+  ]);
+  if (
+    !canTryPublicDetail.has(originalError.code) ||
+    initial.hostname === 'jingxuan.douyin.com' ||
+    page.url.hostname === 'jingxuan.douyin.com' ||
+    /\/note\/\d+(?:\/|$)/.test(initial.pathname) ||
+    /\/note\/\d+(?:\/|$)/.test(page.url.pathname)
+  )
+    throw originalError;
+  const publicDetailUnavailable = () =>
+    new DouyinResolveError(
+      'PUBLIC_DETAIL_UNAVAILABLE',
+      'metadata',
+      '公开备用页面暂不可用，未取得可确认的媒体信息。请在抖音官方页面确认分享内容是否仍可访问，或稍后重试。',
+    );
+  const fallback = await fetchSharePage(
+    new URL(`https://jingxuan.douyin.com/m/video/${expectedID}`),
+    fetcher,
+    budget,
+  ).catch((error: unknown) => {
+    // A missing alternate page does not establish that the original work was deleted.
+    if (error instanceof DouyinResolveError && error.code === 'CONTENT_UNAVAILABLE')
+      throw publicDetailUnavailable();
+    throw error;
+  });
+  if (shareItemID(fallback.url) !== expectedID)
+    throw new DouyinResolveError(
+      'SHARED_ITEM_UNAVAILABLE',
+      'metadata',
+      '公开页面没有目标分享作品的数据。为避免误取推荐内容，本次不返回其他作品。',
+    );
+  const fallbackError = unresolvedPageError(fallback.html, expectedID);
+  if (fallbackError.code === 'CONTENT_UNAVAILABLE') throw publicDetailUnavailable();
+  if (restricted.has(fallbackError.code)) throw fallbackError;
+  const fallbackResult = parseDouyinHTML(fallback.html, expectedID);
+  if (!fallbackResult) throw fallbackError;
+  return fallbackResult;
 }

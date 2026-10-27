@@ -4,10 +4,8 @@ import { body, consumeRate, db, json, sameOrigin } from './_lib/core.js';
 import {
   DouyinResolveError,
   extractShareURL,
-  fetchSharePage,
-  parseDouyinHTML,
+  resolveDouyinShare,
   shareItemID,
-  unresolvedPageError,
 } from './_lib/douyin.js';
 const memory = new Map<string, { count: number; until: number }>();
 const memoryKey = randomBytes(32);
@@ -45,11 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
     const allowed = db() ? await consumeRate(req, 'resolve', 6, 60) : localLimit(req);
     if (!allowed) return json(res, 429, { error: '解析请求过于频繁，请一分钟后再试。' });
-    const page = await fetchSharePage(url);
-    const expectedID = shareItemID(page.url) || shareItemID(url);
-    if (!expectedID) throw unresolvedPageError(page.html);
-    const result = parseDouyinHTML(page.html, expectedID);
-    if (!result) throw unresolvedPageError(page.html, expectedID);
+    const result = await resolveDouyinShare(url);
     return json(res, 200, {
       ...result,
       experimental: true,

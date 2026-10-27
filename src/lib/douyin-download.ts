@@ -12,6 +12,7 @@ export async function downloadPublicMedia(
   signal: AbortSignal,
   onAttempt?: (index: number) => void,
   fetcher: typeof fetch = fetch,
+  onProgress?: (received: number, total: number | null) => void,
 ): Promise<{ blob: Blob; extension: string }> {
   const first = safeMediaURL(item.url);
   if (!first) throw new Error('媒体地址无效，请重新解析。');
@@ -71,6 +72,10 @@ export async function downloadPublicMedia(
     if (!reader) throw new Error('浏览器无法读取媒体内容。');
     const chunks: Uint8Array[] = [];
     let size = 0;
+    let lastProgress = Date.now();
+    let reportedSize = 0;
+    const total = Number.isFinite(expected) && expected > 0 ? expected : null;
+    onProgress?.(0, total);
     try {
       while (true) {
         const chunk = await reader.read();
@@ -78,11 +83,17 @@ export async function downloadPublicMedia(
         size += chunk.value.byteLength;
         if (size > limit) throw new Error('媒体超过 200 MB 浏览器下载上限。');
         chunks.push(chunk.value);
+        if (!reportedSize || Date.now() - lastProgress >= 150) {
+          onProgress?.(size, total);
+          reportedSize = size;
+          lastProgress = Date.now();
+        }
       }
     } finally {
       await reader.cancel().catch(() => {});
     }
     if (!size) throw new Error('平台返回了空媒体文件，请重新解析。');
+    if (signal.aborted) throw new DOMException('下载已取消', 'AbortError');
     if (expected > 0 && size !== expected)
       throw new Error('媒体传输不完整，未保存文件。请重新下载。');
     if (range) {
@@ -103,6 +114,7 @@ export async function downloadPublicMedia(
             : type === 'video/webm'
               ? 'webm'
               : 'mp4';
+    if (size !== reportedSize) onProgress?.(size, total);
     return { blob: new Blob(chunks, { type }), extension };
   }
   throw failure;

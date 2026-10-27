@@ -87,6 +87,12 @@ test('媒体主地址网络失败后直接尝试同作品备用地址，下载�
     });
   });
   await mockResolve(page);
+  await expect(page.locator('link[rel="preconnect"][href="https://v1.douyinvod.com"]')).toHaveCount(
+    1,
+  );
+  await expect(page.locator('link[rel="preconnect"][href="https://v2.douyinvod.com"]')).toHaveCount(
+    1,
+  );
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载视频', exact: true }).click();
   const download = await pending;
@@ -114,6 +120,58 @@ test('媒体主地址网络失败后直接尝试同作品备用地址，下载�
   expect(dimensions).toEqual([64, 48]);
   await expect(page.getByRole('status')).toContainText('下载已发起');
   await expect(page.getByText(/实验性工具/)).toBeVisible();
+  await page.getByRole('button', { name: '清空', exact: true }).click();
+  await expect(page.locator('link[rel="preconnect"][href*="douyinvod.com"]')).toHaveCount(0);
+});
+
+test('下载进度只随真实接收字节变化，并适配桌面与移动主题', async ({ page }) => {
+  await page.addInitScript(
+    ({ primary }) => {
+      const original = window.fetch;
+      const control = window as unknown as { finishMedia: () => void };
+      window.fetch = async (input, init) => {
+        if (String(input) !== primary) return original(input, init);
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1, 2]));
+            control.finishMedia = () => {
+              controller.enqueue(new Uint8Array([3, 4, 5, 6, 7, 8]));
+              controller.close();
+            };
+          },
+        });
+        return new Response(body, {
+          headers: { 'Content-Type': 'video/mp4', 'Content-Length': '8' },
+        });
+      };
+    },
+    { primary },
+  );
+  await mockResolve(page);
+  await page.getByRole('button', { name: '下载视频', exact: true }).click();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25');
+  for (const [width, theme] of [
+    [1440, 'dark'],
+    [390, 'light'],
+    [320, 'dark'],
+  ] as const) {
+    await page.setViewportSize({ width, height: 960 });
+    await page.evaluate((theme) => (document.documentElement.dataset.theme = theme), theme);
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      animations: 'disabled',
+      path: `${process.env.QINGXIA_SCREENSHOT_DIR || 'test-results'}/douyin-progress-${width}-${theme}.png`,
+      fullPage: true,
+    });
+  }
+  const pending = page.waitForEvent('download');
+  await page.evaluate(() => (window as unknown as { finishMedia: () => void }).finishMedia());
+  const download = await pending;
+  expect((await readFile((await download.path())!)).length).toBe(8);
+  await expect(page.getByRole('status')).toContainText('下载已发起');
 });
 
 test('取消下载不启动备用请求，不保存部分文件且允许重新解析', async ({ page }) => {

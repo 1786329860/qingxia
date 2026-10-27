@@ -110,6 +110,22 @@ describe('direct public media download', () => {
     expect((await downloadPublicMedia(item, signal(), undefined, fetcher)).blob.size).toBe(2);
     expect(fetcher).toHaveBeenCalledOnce();
   });
+  it('reports received bytes from the actual response, without inventing an unknown total', async () => {
+    for (const known of [true, false]) {
+      const progress = vi.fn();
+      const headers: Record<string, string> = { 'Content-Type': 'video/mp4' };
+      if (known) headers['Content-Length'] = '3';
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response(new Uint8Array([1, 2, 3]), { headers }));
+      const result = await downloadPublicMedia(item, signal(), undefined, fetcher, progress);
+      expect(progress.mock.calls).toEqual([
+        [0, known ? 3 : null],
+        [3, known ? 3 : null],
+      ]);
+      expect(result.blob.size).toBe(3);
+    }
+  });
   it('filters unsafe alternatives, deduplicates and shares one abort signal', async () => {
     const controller = new AbortController();
     const fetcher = vi.fn<typeof fetch>().mockRejectedValue(new TypeError('network'));

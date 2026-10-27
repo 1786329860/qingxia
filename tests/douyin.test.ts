@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import handler from '../api/resolve';
+import { douyinResolveCache } from '../api/_lib/douyin-cache';
 import {
   assertShareURL,
   DouyinResolveError,
@@ -664,6 +665,7 @@ function response() {
 
 describe('resolve API safety and honest failure responses', () => {
   beforeEach(() => {
+    douyinResolveCache.clear();
     vi.stubEnv('SUPABASE_URL', '');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
   });

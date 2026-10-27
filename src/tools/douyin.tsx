@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, Link2, ExternalLink, LoaderCircle } from 'lucide-react';
-import { ActionButton, Field, Notice, ResultBox, ErrorNotice } from '../components/ToolUI';
-import { downloadBlob, errorMessage } from '../lib/files';
+import {
+  ActionButton,
+  Field,
+  Notice,
+  ResultBox,
+  ErrorNotice,
+  Progress,
+} from '../components/ToolUI';
+import { downloadBlob, errorMessage, formatBytes } from '../lib/files';
 import { trackToolUse } from '../lib/analytics';
 import { downloadPublicMedia, type DownloadMedia } from '../lib/douyin-download';
-import { extractShareURL } from '../../api/_lib/douyin';
+import { extractShareURL, safeMediaURL } from '../../api/_lib/douyin';
 interface Result {
   title: string;
   author: string;
@@ -20,13 +27,41 @@ export default function DouyinTool() {
   const [result, setResult] = useState<Result | null>(null);
   const [downloading, setDownloading] = useState<number | null>(null);
   const [downloadStatus, setDownloadStatus] = useState('');
+  const [downloadProgress, setDownloadProgress] = useState<{
+    received: number;
+    total: number | null;
+  } | null>(null);
   const abort = useRef<AbortController | null>(null);
   useEffect(() => () => abort.current?.abort(), []);
+  useEffect(() => {
+    if (!result) return;
+    // Warm only a bounded set of official origins, without fetching the media itself.
+    const origins = [
+      ...new Set(
+        result.items
+          .flatMap((item) => [item.url, ...(item.fallbackUrls || [])])
+          .slice(0, 4)
+          .map(safeMediaURL)
+          .filter((url): url is string => Boolean(url))
+          .map((url) => new URL(url).origin),
+      ),
+    ].slice(0, 2);
+    const links = origins.map((origin) => {
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = origin;
+      link.crossOrigin = 'anonymous';
+      document.head.append(link);
+      return link;
+    });
+    return () => links.forEach((link) => link.remove());
+  }, [result]);
   async function resolve() {
     if (busy) return;
     setBusy(true);
     setError('');
     setDownloadStatus('');
+    setDownloadProgress(null);
     setResult(null);
     const controller = new AbortController();
     abort.current = controller;
@@ -64,13 +99,19 @@ export default function DouyinTool() {
     setDownloading(index);
     setError('');
     setDownloadStatus('');
+    setDownloadProgress(null);
     const controller = new AbortController();
     abort.current = controller;
     const timer = setTimeout(() => controller.abort('timeout'), 90000);
     try {
-      const media = await downloadPublicMedia(result.items[index], controller.signal, (attempt) => {
-        setDownloadStatus(attempt ? '正在尝试作品提供的备用下载地址…' : '正在读取媒体文件…');
-      });
+      const media = await downloadPublicMedia(
+        result.items[index],
+        controller.signal,
+        (attempt) =>
+          setDownloadStatus(attempt ? '正在尝试作品提供的备用下载地址…' : '正在读取媒体文件…'),
+        fetch,
+        (received, total) => setDownloadProgress({ received, total }),
+      );
       downloadBlob(media.blob, `轻匣-抖音-${index + 1}.${media.extension}`);
       setDownloadStatus('下载已发起，请在浏览器中查看文件。');
     } catch (e) {
@@ -138,6 +179,18 @@ export default function DouyinTool() {
           {downloadStatus}
         </p>
       )}
+      {downloading !== null &&
+        downloadProgress &&
+        (downloadProgress.total ? (
+          <Progress
+            value={(downloadProgress.received / downloadProgress.total) * 100}
+            label={`正在接收 ${formatBytes(downloadProgress.received)} / ${formatBytes(downloadProgress.total)}`}
+          />
+        ) : (
+          <p className="muted">
+            已接收 {formatBytes(downloadProgress.received)}，平台未提供总大小。
+          </p>
+        ))}
       {result && (
         <ResultBox title="解析结果">
           <h2>{result.title}</h2>

@@ -1,4 +1,4 @@
-import { randomBytes, createHmac } from 'node:crypto';
+import { randomBytes, createHmac, createHash } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { body, consumeRate, db, json, sameOrigin } from './_lib/core.js';
 import {
@@ -7,6 +7,7 @@ import {
   resolveDouyinShare,
   shareItemID,
 } from './_lib/douyin.js';
+import { DouyinCacheBusyError, douyinResolveCache } from './_lib/douyin-cache.js';
 const memory = new Map<string, { count: number; until: number }>();
 const memoryKey = randomBytes(32);
 function localLimit(req: VercelRequest) {
@@ -43,13 +44,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
     const allowed = db() ? await consumeRate(req, 'resolve', 6, 60) : localLimit(req);
     if (!allowed) return json(res, 429, { error: '解析请求过于频繁，请一分钟后再试。' });
-    const result = await resolveDouyinShare(url);
+    const started = performance.now();
+    const key = createHash('sha256').update(url.href).digest('hex');
+    const cached = await douyinResolveCache.resolve(key, () => resolveDouyinShare(url));
+    res.setHeader(
+      'Server-Timing',
+      `douyin-cache;desc="${cached.status}", douyin-resolve;dur=${(performance.now() - started).toFixed(1)}`,
+    );
+    const result = cached.value;
     return json(res, 200, {
       ...result,
       experimental: true,
       notice: '直链可能过期，浏览器下载取决于平台跨域与防盗链设置。',
     });
   } catch (error) {
+    if (error instanceof DouyinCacheBusyError)
+      return json(res, 429, {
+        error: error.message,
+        code: 'RESOLVE_BUSY',
+        stage: 'page',
+        experimental: true,
+      });
     if (error instanceof DouyinResolveError)
       return json(res, error.status, {
         error: error.message,

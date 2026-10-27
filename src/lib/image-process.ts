@@ -2,6 +2,7 @@ import { checkFileSize } from './files';
 
 export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif';
 export type ImageOutput = ImageFormat | 'original';
+export type ImageProgressStage = 'decoding' | 'loading-codec' | 'encoding';
 export interface ImageOptions {
   format: ImageOutput;
   quality: number;
@@ -156,7 +157,14 @@ async function loadAvifDecoder() {
 }
 let avifDecoder: ReturnType<typeof loadAvifDecoder> | undefined;
 async function decodeAvif(file: File): Promise<ImageData> {
-  const module = await (avifDecoder ??= loadAvifDecoder());
+  if (!avifDecoder) {
+    const loading = loadAvifDecoder();
+    avifDecoder = loading;
+    void loading.catch(() => {
+      if (avifDecoder === loading) avifDecoder = undefined;
+    });
+  }
+  const module = await avifDecoder;
   const image = module.decode(await file.arrayBuffer(), 8);
   if (!image) throw new Error('AVIF 图片无法解码，文件可能已损坏或使用了不支持的编码。');
   return image;
@@ -218,8 +226,25 @@ async function loadAvifEncoder() {
   };
 }
 let avifEncoder: ReturnType<typeof loadAvifEncoder> | undefined;
-async function encodeAvif(data: ImageData, quality: number): Promise<Blob> {
-  const { module, defaultOptions } = await (avifEncoder ??= loadAvifEncoder());
+/** Called only after AVIF is selected or requested; never from the home page. */
+export async function prepareAvifEncoder() {
+  if (!avifEncoder) {
+    const loading = loadAvifEncoder();
+    avifEncoder = loading;
+    void loading.catch(() => {
+      if (avifEncoder === loading) avifEncoder = undefined;
+    });
+  }
+  return avifEncoder;
+}
+async function encodeAvif(
+  data: ImageData,
+  quality: number,
+  onProgress?: (stage: ImageProgressStage) => void,
+): Promise<Blob> {
+  onProgress?.('loading-codec');
+  const { module, defaultOptions } = await prepareAvifEncoder();
+  onProgress?.('encoding');
   const result = module.encode(new Uint8Array(data.data.buffer), data.width, data.height, {
     ...defaultOptions,
     quality: Math.round(quality * 100),
@@ -231,13 +256,18 @@ async function encodeAvif(data: ImageData, quality: number): Promise<Blob> {
 }
 
 /** Called in a dedicated worker when possible; never sends image data over the network. */
-export async function transformImage(file: File, options: ImageOptions): Promise<ProcessedImage> {
+export async function transformImage(
+  file: File,
+  options: ImageOptions,
+  onProgress?: (stage: ImageProgressStage) => void,
+): Promise<ProcessedImage> {
   checkFileSize(file, 40);
   const sourceFormat = await detectSignature(file);
   if (!sourceFormat) throw new Error('格式不支持，请选择 JPG、PNG、WebP 或 AVIF 图片。');
   const headerSize = await headerDimensions(file, sourceFormat);
   if (headerSize) checkPixels(headerSize.width, headerSize.height, options.maxPixels);
   const format = options.format === 'original' ? sourceFormat : options.format;
+  onProgress?.('decoding');
   const decoded = await decodeImage(file, sourceFormat);
   try {
     const sourceWidth = decoded.width;
@@ -282,10 +312,11 @@ export async function transformImage(file: File, options: ImageOptions): Promise
       sourceCanvas.width = 1;
       sourceCanvas.height = 1;
     } else ctx.drawImage(decoded, 0, 0, width, height);
+    onProgress?.('encoding');
     let blob = await canvasBlob(canvas, IMAGE_MIMES[format], options.quality);
     if (blob.type !== IMAGE_MIMES[format]) {
       if (format === 'avif')
-        blob = await encodeAvif(ctx.getImageData(0, 0, width, height), options.quality);
+        blob = await encodeAvif(ctx.getImageData(0, 0, width, height), options.quality, onProgress);
       else
         throw new Error(
           `当前浏览器不支持导出 ${format.toUpperCase()}，请换用较新的 Chrome、Edge 或 Safari。`,

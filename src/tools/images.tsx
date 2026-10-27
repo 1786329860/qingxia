@@ -16,6 +16,7 @@ import {
   detectImageFormat,
   IMAGE_EXTENSIONS,
   type ImageOutput,
+  type ImageProgressStage,
   type ProcessedImage,
 } from '../lib/image-process';
 import { createImageProcessor } from '../lib/image-client';
@@ -43,6 +44,11 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
   const [maxHeight, setMaxHeight] = useState('');
   const [background, setBackground] = useState('#ffffff');
   const [currentFile, setCurrentFile] = useState('');
+  const [currentStage, setCurrentStage] = useState<ImageProgressStage | ''>('');
+  const [avifPreparation, setAvifPreparation] = useState<'idle' | 'loading' | 'ready' | 'error'>(
+    'idle',
+  );
+  const [prepareAttempt, setPrepareAttempt] = useState(0);
   const [zipBusy, setZipBusy] = useState(false);
   const processor = useRef<ReturnType<typeof createImageProcessor> | null>(null);
   const canceled = useRef(false);
@@ -59,6 +65,24 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
       urls.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (format !== 'avif') return;
+    let current = true;
+    const runner = (processor.current ??= createImageProcessor());
+    setAvifPreparation('loading');
+    void runner.prepareAvif().then(
+      () => {
+        if (current && mounted.current && processor.current === runner) setAvifPreparation('ready');
+      },
+      () => {
+        if (current && mounted.current && processor.current === runner) setAvifPreparation('error');
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [format, prepareAttempt]);
 
   const clearResults = () => {
     for (const url of previews.current) URL.revokeObjectURL(url);
@@ -120,8 +144,7 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
         throw new Error('尺寸必须是 0～16000 的整数，留空表示保持原尺寸。');
       clearResults();
       canceled.current = false;
-      const runner = createImageProcessor();
-      processor.current = runner;
+      const runner = (processor.current ??= createImageProcessor());
       let successful = 0;
       let outputBytes = 0;
       try {
@@ -130,15 +153,21 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
           const file = files[i];
           setCurrentFile(file.name);
           try {
-            const image = await runner.process(file, {
-              format,
-              quality: quality / 100,
-              maxWidth: compress ? width : 0,
-              maxHeight: compress ? height : 0,
-              maxPixels: matchMedia('(pointer: coarse)').matches ? 12e6 : 32e6,
-              keepSmaller: compress,
-              background,
-            });
+            const image = await runner.process(
+              file,
+              {
+                format,
+                quality: quality / 100,
+                maxWidth: compress ? width : 0,
+                maxHeight: compress ? height : 0,
+                maxPixels: matchMedia('(pointer: coarse)').matches ? 12e6 : 32e6,
+                keepSmaller: compress,
+                background,
+              },
+              (stage) => {
+                if (mounted.current && !canceled.current) setCurrentStage(stage);
+              },
+            );
             if (!mounted.current || canceled.current) break;
             if (outputBytes + image.blob.size > 128 * 1024 * 1024)
               throw new Error(
@@ -169,9 +198,10 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
           if (mounted.current) task.setProgress(((i + 1) / files.length) * 100);
         }
       } finally {
-        runner.dispose();
-        if (processor.current === runner) processor.current = null;
-        if (mounted.current) setCurrentFile('');
+        if (mounted.current) {
+          setCurrentFile('');
+          setCurrentStage('');
+        }
       }
       if (canceled.current) throw new Error('已取消，已经完成的结果仍可下载。');
       if (!successful) throw new Error('本批图片均未处理成功，请查看各文件的错误说明。');
@@ -322,9 +352,26 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
       </div>
 
       {format === 'avif' && (
-        <Notice>
-          AVIF
-          首次处理会按需加载本站的本地编解码模块。编码较慢，建议先试一张；图片不会上传。动态图片仅输出静态首帧。
+        <Notice tone={avifPreparation === 'error' ? 'warning' : 'info'}>
+          <span role="status" aria-live="polite">
+            {avifPreparation === 'loading'
+              ? '正在准备 AVIF，首次加载可能需要几秒；可以直接开始转换。'
+              : avifPreparation === 'ready'
+                ? 'AVIF 已就绪，可以开始转换。'
+                : avifPreparation === 'error'
+                  ? 'AVIF 准备未完成，请重试；开始转换时也会重新尝试。'
+                  : 'AVIF 首次使用需要准备本地编码器，后续转换会复用。'}
+          </span>{' '}
+          图片不会上传，动态图片仅输出静态首帧。
+          {avifPreparation === 'error' && !task.busy && (
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setPrepareAttempt((attempt) => attempt + 1)}
+            >
+              重试准备 AVIF
+            </button>
+          )}
         </Notice>
       )}
       {compress &&
@@ -358,6 +405,8 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
             onClick={() => {
               canceled.current = true;
               processor.current?.cancel();
+              processor.current = null;
+              setAvifPreparation('idle');
             }}
           >
             取消处理
@@ -372,7 +421,15 @@ function ImageTool({ mode }: { mode: 'compress' | 'convert' }) {
       {task.busy && (
         <Progress
           value={task.progress}
-          label={currentFile ? `正在处理：${currentFile}` : '正在准备'}
+          label={
+            currentStage === 'loading-codec'
+              ? '正在准备 AVIF 编码器，图片仍在本机'
+              : currentStage === 'decoding'
+                ? '正在读取图片'
+                : currentStage === 'encoding'
+                  ? `正在转换${currentFile ? `：${currentFile}` : ''}`
+                  : '正在准备'
+          }
         />
       )}
 

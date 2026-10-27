@@ -47,14 +47,21 @@ function expectPng(bytes: Uint8Array) {
   expect(Array.from(bytes.subarray(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
 }
 
-test('图片转换生成真实 AVIF 编码，浏览器可重新解码', async ({ page }) => {
+test('图片转换生成真实 AVIF 编码，浏览器可重新解码', async ({ page }, testInfo) => {
   await page.goto('/tool/image-convert');
   const input = await pngFixture(page, 'avif-source.png');
   await page.locator('input[type="file"]').setInputFiles(input);
   await page.getByLabel('输出格式').selectOption('avif');
+  const started = Date.now();
   await page.getByRole('button', { name: '开始转换', exact: true }).click();
   const downloadButton = page.getByRole('button', { name: '下载 AVIF', exact: true });
-  await expect(downloadButton).toBeVisible();
+  // Cold codec transfer is not a fixed CPU budget; keep the old five-second metric visible.
+  await expect(downloadButton).toBeVisible({ timeout: 30_000 });
+  const processingMs = Date.now() - started;
+  await testInfo.attach('avif-first-result-timing', {
+    body: JSON.stringify({ processingMs, priorFiveSecondBudgetMet: processingMs <= 5000 }),
+    contentType: 'application/json',
+  });
   const result = await downloadBytes(page, () => downloadButton.click());
   expect(result.name).toBe('avif-source.avif');
   expect(result.bytes.subarray(4, 8).toString('ascii')).toBe('ftyp');
@@ -68,6 +75,88 @@ test('图片转换生成真实 AVIF 编码，浏览器可重新解码', async ({
     return size;
   }, Array.from(result.bytes));
   expect(dimensions).toEqual({ width: 64, height: 48 });
+});
+
+test('AVIF 只在选择后准备，同页重复转换复用处理线程', async ({ page }) => {
+  const codecRequests: string[] = [];
+  const workers: string[] = [];
+  const writes: string[] = [];
+  page.on('request', (request) => {
+    if (/avif_(enc|dec)/.test(request.url())) codecRequests.push(request.url());
+    if (request.method() === 'POST') writes.push(request.postData() || '');
+  });
+  page.on('worker', (worker) => workers.push(worker.url()));
+  await page.goto('/');
+  await expect(page.locator('.hero-section h1')).toBeVisible();
+  expect(codecRequests).toEqual([]);
+  await page.goto('/tool/image-convert');
+  await expect(page.getByLabel('输出格式')).toBeVisible();
+  expect(codecRequests).toEqual([]);
+  await page
+    .locator('input[type="file"]')
+    .setInputFiles(await pngFixture(page, 'LOCAL_ONLY_AVIF.png'));
+  await page.getByLabel('输出格式').selectOption('avif');
+  await expect(page.getByText('AVIF 已就绪，可以开始转换。', { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  expect(codecRequests.length).toBeGreaterThan(0);
+  const resourceCount = codecRequests.length;
+  for (let i = 0; i < 2; i++) {
+    await page.getByRole('button', { name: '开始转换', exact: true }).click();
+    await expect(page.getByRole('button', { name: '下载 AVIF', exact: true })).toBeVisible({
+      timeout: 30_000,
+    });
+  }
+  expect(workers.filter((url) => url.includes('image-worker'))).toHaveLength(1);
+  expect(codecRequests).toHaveLength(resourceCount);
+  expect(writes.join('')).not.toContain('LOCAL_ONLY_AVIF');
+});
+
+test('AVIF 准备失败可重试，无需刷新页面', async ({ page }) => {
+  let blockWasm = true;
+  await page.route(/avif_enc[^?]*\.wasm$/, (route) =>
+    blockWasm ? route.abort('failed') : route.continue(),
+  );
+  await page.goto('/tool/image-convert');
+  await page.getByLabel('输出格式').selectOption('avif');
+  const retry = page.getByRole('button', { name: '重试准备 AVIF', exact: true });
+  await expect(retry).toBeVisible({ timeout: 30_000 });
+  blockWasm = false;
+  await retry.click();
+  await expect(page.getByText('AVIF 已就绪，可以开始转换。', { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.locator('input[type="file"]').setInputFiles(await pngFixture(page, 'retry.png'));
+  await page.getByRole('button', { name: '开始转换', exact: true }).click();
+  const result = await downloadBytes(page, () =>
+    page.getByRole('button', { name: '下载 AVIF', exact: true }).click(),
+  );
+  expect(result.bytes.subarray(4, 8).toString('ascii')).toBe('ftyp');
+});
+
+test('取消 AVIF 加载会结束等待，之后可重新转换', async ({ page }) => {
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let hold = true;
+  await page.route(/avif_enc[^?]*\.wasm$/, async (route) => {
+    if (hold) await gate;
+    await route.continue().catch(() => {});
+  });
+  await page.goto('/tool/image-convert');
+  await page.locator('input[type="file"]').setInputFiles(await pngFixture(page, 'cancel.png'));
+  await page.getByLabel('输出格式').selectOption('avif');
+  await page.getByRole('button', { name: '开始转换', exact: true }).click();
+  await page.getByRole('button', { name: '取消处理', exact: true }).click();
+  await expect(page.getByRole('button', { name: '开始转换', exact: true })).toBeEnabled();
+  await expect(page.getByRole('alert')).toContainText('已取消');
+  hold = false;
+  release?.();
+  await page.getByRole('button', { name: '开始转换', exact: true }).click();
+  await expect(page.getByRole('button', { name: '下载 AVIF', exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
 });
 
 test('图片批量转换下载真实 ZIP，网络只发送匿名事件、不上传文件', async ({ page }) => {

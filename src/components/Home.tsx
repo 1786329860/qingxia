@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowDown,
@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   Box,
   Check,
-  ChevronRight,
   Heart,
   History,
   LockKeyhole,
@@ -14,160 +13,26 @@ import {
   ShieldCheck,
   Sparkles,
   X,
-  Zap,
 } from 'lucide-react';
 import { categories, tools, type ToolMeta } from '../lib/registry';
 import { useFavorites, useRecentTools } from '../lib/preferences';
 
-function CubeArt() {
-  return (
-    <div className="cube-art" aria-hidden="true">
-      <div className="orbital orbital-one" />
-      <div className="orbital orbital-two" />
-      <div className="cube-glow" />
-      <div className="cube-grid" />
-      <svg viewBox="0 0 380 330" className="hero-cube">
-        <defs>
-          <linearGradient id="cube-top" x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#ddffac" stopOpacity=".8" />
-            <stop offset="1" stopColor="#82d36b" stopOpacity=".1" />
-          </linearGradient>
-          <linearGradient id="cube-left" x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#a9f37e" stopOpacity=".3" />
-            <stop offset="1" stopColor="#2e6551" stopOpacity=".05" />
-          </linearGradient>
-          <linearGradient id="cube-right" x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#c7ff99" stopOpacity=".4" />
-            <stop offset="1" stopColor="#4ba16f" stopOpacity=".12" />
-          </linearGradient>
-          <filter id="cube-blur">
-            <feGaussianBlur stdDeviation="16" />
-          </filter>
-        </defs>
-        <ellipse
-          cx="193"
-          cy="285"
-          rx="95"
-          ry="16"
-          fill="#b9f97d"
-          opacity=".15"
-          filter="url(#cube-blur)"
-        />
-        <g className="cube-body">
-          <path
-            d="m92 113 100-54 100 54-100 56z"
-            fill="url(#cube-top)"
-            stroke="#c7ff9c"
-            strokeOpacity=".65"
-          />
-          <path
-            d="m92 113 100 56v111L92 225z"
-            fill="url(#cube-left)"
-            stroke="#b1ef8e"
-            strokeOpacity=".35"
-          />
-          <path
-            d="m192 169 100-56v112l-100 55z"
-            fill="url(#cube-right)"
-            stroke="#caffaa"
-            strokeOpacity=".6"
-          />
-          <ellipse
-            cx="192"
-            cy="178"
-            rx="37"
-            ry="39"
-            fill="#b9f97d"
-            opacity=".35"
-            filter="url(#cube-blur)"
-          />
-          <path
-            d="m152 155 40-22 40 22-40 22z"
-            fill="#c8ff91"
-            fillOpacity=".24"
-            stroke="#d9ffb7"
-            strokeOpacity=".55"
-          />
-          <path
-            d="m152 155 40 22v45l-40-23z"
-            fill="#b9f97d"
-            fillOpacity=".13"
-            stroke="#c7ff99"
-            strokeOpacity=".35"
-          />
-          <path
-            d="m192 177 40-22v44l-40 23z"
-            fill="#b9f97d"
-            fillOpacity=".3"
-            stroke="#e2ffc3"
-            strokeOpacity=".7"
-          />
-          <path
-            d="m106 106 86-46 87 46M292 114v111l-100 55"
-            fill="none"
-            stroke="#ecffda"
-            strokeOpacity=".8"
-            strokeWidth="1.3"
-          />
-          <path
-            d="m125 132 67 37 67-37M192 169v75"
-            fill="none"
-            stroke="#e2ffcb"
-            strokeOpacity=".5"
-            strokeWidth="1.5"
-          />
-          <path
-            d="m145 100 47-25 47 25-47 26z"
-            fill="#c5ff9a"
-            fillOpacity=".5"
-            stroke="#e6ffd6"
-            strokeOpacity=".6"
-          />
-          <path d="m153 105 39 21 39-21" fill="none" stroke="#f1ffe7" strokeOpacity=".75" />
-          <path
-            d="m170 94 22 12 22-12"
-            fill="none"
-            stroke="#edffe1"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <path
-            d="m112 150 19 10m-19 9 19 10m-19 9 19 10"
-            stroke="#d8ffbc"
-            strokeOpacity=".5"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <circle cx="268" cy="207" r="3" fill="#c4ff94" />
-          <circle cx="268" cy="219" r="3" fill="#c4ff94" fillOpacity=".35" />
-        </g>
-        <g className="cube-sparkles" fill="#d9ffb7">
-          <path d="m296 58 3 9 9 3-9 3-3 9-3-9-9-3 9-3z" />
-          <path d="m72 212 2 6 6 2-6 2-2 6-2-6-6-2 6-2z" />
-          <circle cx="92" cy="65" r="2" />
-          <circle cx="318" cy="183" r="2" />
-          <circle cx="130" cy="264" r="1.5" />
-        </g>
-      </svg>
-      <span className="floating-pill pill-top">
-        <ShieldCheck size={13} />
-        本地优先
-      </span>
-      <span className="floating-pill pill-bottom">
-        <Zap size={13} />
-        即开即用
-      </span>
-      <span className="cube-coordinate">少一点繁琐，多一点自在</span>
-    </div>
-  );
-}
+const BreathingBox = lazy(() => import('./BreathingBox'));
 
-function ToolCard({ tool, index }: { tool: ToolMeta; index: number }) {
+function ToolCard({
+  tool,
+  index,
+  onFavorite,
+}: {
+  tool: ToolMeta;
+  index: number;
+  onFavorite: (message: string) => void;
+}) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const Icon = tool.icon;
   return (
     <article
-      className={`tool-card category-${tool.category}`}
+      className={`tool-card category-${tool.category} ${isFavorite(tool.id) ? 'is-saved' : ''}`}
       style={{ '--card-index': Math.min(index, 12) } as React.CSSProperties}
     >
       <Link to={`/tool/${tool.id}`} className="tool-card-link">
@@ -203,7 +68,10 @@ function ToolCard({ tool, index }: { tool: ToolMeta; index: number }) {
       </Link>
       <button
         className={`favorite-button ${isFavorite(tool.id) ? 'is-favorite' : ''}`}
-        onClick={() => toggleFavorite(tool.id)}
+        onClick={() => {
+          onFavorite(isFavorite(tool.id) ? `已取消收藏${tool.name}` : `已收藏${tool.name}`);
+          toggleFavorite(tool.id);
+        }}
         aria-label={isFavorite(tool.id) ? `取消收藏${tool.name}` : `收藏${tool.name}`}
         aria-pressed={isFavorite(tool.id)}
       >
@@ -219,6 +87,15 @@ export default function Home() {
   const view = params.get('view') || 'all';
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('default');
+  const [feedback, setFeedback] = useState('');
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const announceFavorite = (message: string) => {
+    clearTimeout(feedbackTimer.current);
+    setFeedback(message);
+    feedbackTimer.current = setTimeout(() => setFeedback(''), 1800);
+  };
+  useEffect(() => () => clearTimeout(feedbackTimer.current), []);
   const searchRef = useRef<HTMLInputElement>(null);
   const { favorites } = useFavorites();
   const { recent, clearRecent } = useRecentTools();
@@ -277,29 +154,60 @@ export default function Home() {
     setParams(next);
   };
   const selectedLabel = categories.find((item) => item.id === category)?.label;
+  const revealTools = () =>
+    document.getElementById('tool-collection')?.scrollIntoView({
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const animation = gridRef.current?.animate(
+      [
+        { opacity: 0.72, transform: 'translateY(5px)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    );
+    return () => animation?.cancel();
+  }, [category, view, sort]);
+  const searchBox = (
+    <div className="search-container">
+      <Search size={20} />
+      <input
+        ref={searchRef}
+        aria-label="搜索工具"
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') revealTools();
+        }}
+        placeholder="想做点什么？搜索工具、功能或关键词…"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
+      {search ? (
+        <button className="icon-button" aria-label="清空搜索" onClick={() => setSearch('')}>
+          <X size={16} />
+        </button>
+      ) : (
+        <kbd>/</kbd>
+      )}
+    </div>
+  );
   return (
     <div className="home-page">
       {!isSpecialView && (
         <section className="hero-section">
           <div className="hero-copy">
-            <div className="hero-eyebrow">
-              <span className="live-dot" />
-              <span>小工具，大自在</span>
-              <span className="eyebrow-line" />
-              <span className="hero-eyebrow-en">随手可用的日常工具</span>
-            </div>
             <h1>
               把日常小事，
               <br />
               <span>轻轻解决。</span>
-              <span className="hero-period">✳</span>
             </h1>
             <p className="hero-description">
-              不必在无数个网站之间来回。
-              <br className="mobile-break" /> 你的图片、文件与灵感，
-              <br className="desktop-break" />
-              都能在这里找到一个轻巧的解决方式。
+              给文件一个去处，给灵感一点空间。
+              <br />
+              在你的浏览器里，把繁琐变轻巧。
             </p>
+            {searchBox}
             <div className="hero-features">
               <span>
                 <Check size={13} />
@@ -314,23 +222,19 @@ export default function Home() {
                 隐私优先
               </span>
             </div>
-            <button
-              className="hero-explore"
-              onClick={() =>
-                document
-                  .getElementById('tool-collection')
-                  ?.scrollIntoView({
-                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                      ? 'auto'
-                      : 'smooth',
-                    block: 'start',
-                  })
-              }
-            >
+            <button className="hero-explore" onClick={revealTools}>
               探索你的工具箱 <ArrowDown size={15} />
             </button>
           </div>
-          <CubeArt />
+          <div className="scene-slot">
+            <Suspense fallback={<div className="scene-loading" aria-hidden="true" />}>
+              <BreathingBox />
+            </Suspense>
+            <div className="scene-caption" aria-hidden="true">
+              <span>为琐事留白</span>
+              <span>为灵感留光</span>
+            </div>
+          </div>
         </section>
       )}
       {isSpecialView && (
@@ -339,7 +243,6 @@ export default function Home() {
             {view === 'favorites' ? <Heart size={28} /> : <History size={28} />}
           </div>
           <div>
-            <div className="section-eyebrow">只属于你的常用角落</div>
             <h1>{view === 'favorites' ? '随手收藏，随时好用。' : '上次的顺手，这次继续。'}</h1>
             <p>
               {view === 'favorites'
@@ -353,7 +256,6 @@ export default function Home() {
       <section className="tool-collection" id="tool-collection" aria-label="工具列表">
         <div className="collection-topline">
           <div className="collection-heading">
-            <span className="section-kicker">轻巧，且刚刚好</span>
             <h2>
               {view === 'favorites'
                 ? '我的收藏'
@@ -368,27 +270,12 @@ export default function Home() {
             少一点繁琐，多一点专注
           </div>
         </div>
-        <div className="search-container">
-          <Search size={20} />
-          <input
-            ref={searchRef}
-            aria-label="搜索工具"
-            placeholder="想做点什么？搜索工具、功能或关键词…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          {search ? (
-            <button className="icon-button" aria-label="清空搜索" onClick={() => setSearch('')}>
-              <X size={16} />
-            </button>
-          ) : (
-            <kbd>/</kbd>
-          )}
-        </div>
+        {isSpecialView && searchBox}
         <div className="collection-controls">
           <div className="category-tabs" role="group" aria-label="按分类筛选">
             <button
               className={category === 'all' ? 'selected' : ''}
+              aria-pressed={category === 'all'}
               onClick={() => setCategory('all')}
             >
               <Box size={14} />
@@ -398,6 +285,7 @@ export default function Home() {
               <button
                 key={item.id}
                 className={category === item.id ? 'selected' : ''}
+                aria-pressed={category === item.id}
                 onClick={() => setCategory(item.id)}
               >
                 {item.label}
@@ -424,9 +312,9 @@ export default function Home() {
           </div>
         )}
         {filtered.length > 0 ? (
-          <div className="tool-grid">
+          <div className="tool-grid" ref={gridRef}>
             {filtered.map((tool, index) => (
-              <ToolCard tool={tool} key={tool.id} index={index} />
+              <ToolCard tool={tool} key={tool.id} index={index} onFavorite={announceFavorite} />
             ))}
           </div>
         ) : (
@@ -475,6 +363,9 @@ export default function Home() {
           <LockKeyhole size={74} />
         </div>
       </section>
+      <div className="favorite-feedback" role="status" aria-live="polite">
+        {feedback}
+      </div>
       <div className="home-endnote">
         <Sparkles size={13} />
         <span>不追求面面俱到，只想让每一次使用都恰到好处。</span>

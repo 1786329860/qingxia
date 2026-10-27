@@ -110,7 +110,6 @@ function ToolRoute() {
           <Icon size={29} />
         </div>
         <div>
-          <p className="eyebrow">日常小事，轻巧解决</p>
           <h1>{tool.name}</h1>
           <p>{tool.description}</p>
         </div>

@@ -1,0 +1,199 @@
+.tool-panel {
+  --task-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tool-panel .dropzone {
+  min-height: 230px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--line-strong));
+  border-radius: 16px;
+  background: var(--bg);
+  isolation: isolate;
+  transition:
+    border-color 240ms var(--task-ease),
+    background-color 240ms var(--task-ease);
+}
+.tool-panel .dropzone::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  pointer-events: none;
+  transition:
+    border-color 240ms var(--task-ease),
+    inset 240ms var(--task-ease);
+}
+.tool-panel .dropzone:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+.tool-panel .dropzone:hover,
+.tool-panel .dropzone.is-dragging {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.tool-panel .dropzone.is-dragging::before {
+  inset: 12px;
+  border-color: var(--accent-border);
+}
+.tool-panel .dropzone-button {
+  position: relative;
+  z-index: 1;
+  min-height: 230px;
+  padding: 30px 24px;
+  gap: 12px;
+  border-radius: inherit;
+  outline: none;
+}
+.tool-panel .dropzone-button strong {
+  font-size: 16px;
+  font-weight: 550;
+  line-height: 1.7;
+}
+.tool-panel .dropzone-button > span:last-child {
+  max-width: 50ch;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.tool-panel .dropzone-icon {
+  width: 62px;
+  height: 62px;
+  margin-bottom: 6px;
+  border-radius: 17px;
+  border: 1px solid var(--accent-border);
+  background: var(--surface-raised);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
+  transition:
+    transform 240ms var(--task-ease),
+    background-color 240ms var(--task-ease);
+}
+.tool-panel .dropzone.is-dragging .dropzone-icon {
+  transform: translateY(-5px);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.tool-panel .dropzone[data-upload-state='disabled'] {
+  border-style: solid;
+}
+.tool-panel .dropzone[data-upload-state='disabled']::before {
+  border-color: transparent;
+}
+.tool-panel .task-button-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+.tool-panel .task-button-feedback > [role='alert'] {
+  font-size: 13px;
+  color: var(--danger);
+}
+.tool-panel .task-feedback-button {
+  transition:
+    color 240ms var(--task-ease),
+    border-color 240ms var(--task-ease),
+    background-color 240ms var(--task-ease),
+    transform 240ms var(--task-ease);
+}
+.tool-panel .task-feedback-button > svg + svg {
+  display: none;
+}
+.tool-panel .task-feedback-button.is-confirmed.button-secondary {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+}
+.tool-panel .button[aria-busy='true'] {
+  cursor: progress;
+  opacity: 0.8;
+}
+.tool-panel .result-box {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+.tool-panel .result-box > .result-heading {
+  display: block;
+  margin: 0 0 18px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+.tool-panel .result-box:focus-within {
+  border-color: var(--accent-border);
+}
+.tool-panel .task-progress {
+  padding: 18px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+}
+.tool-panel .task-progress > div:first-child {
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.tool-panel .task-progress strong {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.tool-panel .progress-track {
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: 2px;
+}
+.tool-panel .progress-track > span {
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transform-origin: left;
+  transition: transform 180ms var(--task-ease);
+}
+.tool-panel .task-progress.is-complete {
+  border-color: var(--accent-border);
+}
+@media (max-width: 540px) {
+  .tool-panel .dropzone,
+  .tool-panel .dropzone-button {
+    min-height: 210px;
+  }
+  .tool-panel .dropzone-button {
+    padding: 26px 18px;
+  }
+  .tool-panel .dropzone-button strong {
+    max-width: 18em;
+    font-size: 15px;
+  }
+  .tool-panel .dropzone-button > span:last-child {
+    font-size: 12px;
+  }
+  .tool-panel .result-box {
+    padding: 18px 16px;
+  }
+  .tool-panel .task-progress {
+    padding: 16px;
+  }
+  .tool-panel .task-button-feedback {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tool-panel .dropzone,
+  .tool-panel .dropzone::before,
+  .tool-panel .dropzone-icon,
+  .tool-panel .task-feedback-button,
+  .tool-panel .progress-track > span {
+    transition: none;
+  }
+  .tool-panel .dropzone.is-dragging .dropzone-icon {
+    transform: none;
+  }
+}

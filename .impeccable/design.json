@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-27T10:11:12Z",
+  "title": "Design System: 轻匣",
+  "extensions": {
+    "colorMeta": {
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "荧光嫩绿",
+        "canonical": "#c3f588"
+      },
+      "light-accent": {
+        "role": "primary",
+        "displayName": "苔绿",
+        "canonical": "#467022"
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "森林近黑",
+        "canonical": "#0a1412"
+      },
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "矿物白",
+        "canonical": "#f3f6ef"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "首页宋体第二行",
+        "purpose": "仅首页标题第二行；Noto Serif SC 500 本地 5300-byte 子集，SIL OFL 1.1。"
+      },
+      "headline": {
+        "displayName": "首页无衬线第一行",
+        "purpose": "沿用系统字型栈，与第二行宋体共用响应式字号。"
+      },
+      "title": {
+        "displayName": "工具卡片标题",
+        "purpose": "桌面17px，移动18px；真实工具名称。"
+      },
+      "body": {
+        "displayName": "任务正文",
+        "purpose": "14px 卡片正文；说明、表单标签和输入按组件分别处理。"
+      },
+      "code": {
+        "displayName": "系统等宽代码",
+        "purpose": "代码输入与输出；未加载外部字库。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-dark",
+        "value": "0 14px 38px #00000020",
+        "purpose": "暗色工具面板与收藏反馈。"
+      },
+      {
+        "name": "ambient-light",
+        "value": "0 14px 38px #253e2710",
+        "purpose": "浅色工具面板与收藏反馈。"
+      },
+      {
+        "name": "mobile-drawer-open",
+        "value": "20px 0 70px #00000038",
+        "purpose": "仅打开的移动导航抽屉；关闭状态无投影。"
+      },
+      {
+        "name": "admin-gate",
+        "value": "0 18px 42px color-mix(in srgb, var(--bg) 68%, transparent)",
+        "purpose": "站长验证卡的低层深度。"
+      },
+      {
+        "name": "result-inset",
+        "value": "inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent)",
+        "purpose": "结果框的内沿微光。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "主要交互、任务反馈与后台过渡的统一缓动。"
+      },
+      {
+        "name": "interaction",
+        "value": "240ms",
+        "purpose": "导航、分类、卡片、搜索、任务反馈、后台，以及路由和分类网格5px进入。"
+      },
+      {
+        "name": "base-button",
+        "value": "150ms",
+        "purpose": "基础button的背景、边界和按压变换；局部任务按钮覆盖为240ms。"
+      },
+      {
+        "name": "base-input",
+        "value": "200ms",
+        "purpose": "基础输入边界与焦点阴影。"
+      },
+      {
+        "name": "progress",
+        "value": "180ms",
+        "purpose": "真实进度值对应的scaleX变换。"
+      },
+      {
+        "name": "favorite-settle",
+        "value": "300ms",
+        "purpose": "收藏填充心形的0.85到1.12再到1回弹。"
+      },
+      {
+        "name": "drawer",
+        "value": "320ms",
+        "purpose": "移动侧栏进入和退出。"
+      },
+      {
+        "name": "theme-icon",
+        "value": "420ms",
+        "purpose": "主题图标变换。"
+      },
+      {
+        "name": "scene-suspension",
+        "value": "8s cubic-bezier(0.45, 0, 0.55, 1) infinite",
+        "purpose": "首页CSS悬浮12px；不可见时暂停，静态模式移除。"
+      },
+      {
+        "name": "scene-draw-budget",
+        "value": "30fps",
+        "purpose": "仅Canvas绘制和指针/滚动变量更新上限；非已测性能结论。full/compact/static粒子30/18/10，DPR上限1.75/1.25/1.25。"
+      },
+      {
+        "name": "transient-feedback",
+        "value": "1800ms",
+        "purpose": "收藏、复制、下载请求的短反馈保留时间。"
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.001ms",
+        "purpose": "全局动画/过渡退化；路由和网格跳过动画，场景为静态，任务与后台过渡移除。"
+      }
+    ],
+    "breakpoints": [
+      { "name": "workspace-narrow", "value": "1100px" },
+      { "name": "mobile-navigation", "value": "760px" },
+      { "name": "scene-small", "value": "640px" },
+      { "name": "admin-mobile", "value": "620px" },
+      { "name": "task-compact", "value": "540px" },
+      { "name": "very-small", "value": "360px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "主操作按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "基础主操作；任务忙碌时另用真实disabled和aria-busy。",
+      "html": "<button class=\"button button-primary\">开始处理</button>",
+      "css": ".button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:41px;padding:10px 16px;border-radius:7px;font:550 13px/1.5 Inter,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;letter-spacing:.3px;border:1px solid transparent;transition:transform 150ms cubic-bezier(.2,.8,.2,1),background 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1);cursor:pointer}.button-primary{background:var(--accent,#c3f588);color:var(--accent-text,#162910);border-color:var(--accent,#c3f588)}.button-primary:hover:not(:disabled){filter:brightness(1.06);box-shadow:0 3px 14px #b9f97d18}.button:active:not(:disabled){transform:scale(.97)}.button:focus-visible{outline:2px solid var(--accent,#c3f588);outline-offset:5px}.button:disabled{cursor:not-allowed;opacity:.48}"
+    },
+    {
+      "name": "首页搜索",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "真实工具搜索输入的外观；快捷键由Home和SiteShell处理。",
+      "html": "<div class=\"search-container\"><input aria-label=\"搜索工具\" placeholder=\"想做点什么？搜索工具、功能或关键词…\" /><kbd>/</kbd></div>",
+      "css": ".search-container{box-sizing:border-box;display:flex;align-items:center;gap:13px;height:60px;padding:0 19px;border:1px solid var(--line-strong,#b7d7bc29);border-radius:12px;background:var(--surface,#11211b);color:var(--text,#f0f3e9);box-shadow:inset 0 1px 0 #ffffff05;transition:border-color 240ms cubic-bezier(.2,.8,.2,1),background 240ms cubic-bezier(.2,.8,.2,1)}.search-container input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:inherit;font:14px Inter,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}.search-container input::placeholder{color:var(--subtle,#8b9f91);opacity:1}.search-container:focus-within{border-color:var(--accent,#c3f588);background:var(--surface-raised,#1a2d23);box-shadow:none}.search-container kbd{font-size:12px;padding:2px 7px;color:var(--subtle,#8b9f91)}"
+    },
+    {
+      "name": "工具卡片",
+      "kind": "card",
+      "refersTo": "tool-card",
+      "description": "实体表面、分类细光与明确入口；此片段只展示卡片外观。",
+      "html": "<article class=\"tool-card\"><a class=\"tool-card-link\" href=\"#tool-preview\"><h3>图片压缩</h3><p>在浏览器里调整图片体积。</p><span>开始使用 ↗</span></a></article>",
+      "css": ".tool-card{position:relative;isolation:isolate;overflow:hidden;border:1px solid var(--line-strong,#b7d7bc29);border-radius:14px;background:var(--surface,#11211b);color:var(--text,#f0f3e9);box-shadow:none;transition:transform 240ms cubic-bezier(.2,.8,.2,1),background 240ms cubic-bezier(.2,.8,.2,1),border-color 240ms cubic-bezier(.2,.8,.2,1)}.tool-card:before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,#b5d5a5,transparent);opacity:.3;pointer-events:none;transition:opacity 240ms cubic-bezier(.2,.8,.2,1)}.tool-card-link{display:block;box-sizing:border-box;min-height:226px;padding:24px 24px 18px;color:inherit;text-decoration:none;font-family:Inter,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}.tool-card h3{font-size:17px;line-height:1.55;font-weight:550;letter-spacing:.015em}.tool-card p{font-size:14px;line-height:1.75;color:var(--muted,#a5b6aa)}.tool-card-link>span{font-size:12px;color:var(--muted,#a5b6aa)}.tool-card:hover{background:var(--surface-hover,#193024);border-color:var(--accent-border,#c3f58845)}.tool-card:hover:before{opacity:.85}@media(hover:hover) and (pointer:fine){.tool-card:hover{transform:translateY(-3px)}}"
+    },
+    {
+      "name": "任务结果容器",
+      "kind": "card",
+      "refersTo": "task-result",
+      "description": "与标题关联的结果区域，结果内容由真实任务提供。",
+      "html": "<section class=\"result-box\" aria-labelledby=\"preview-result\"><h2 class=\"result-heading\" id=\"preview-result\">处理结果</h2><p>结果内容由当前工具任务提供。</p></section>",
+      "css": ".result-box{margin-top:24px;padding:24px;border:1px solid var(--line-strong,#b7d7bc29);border-radius:14px;background:var(--bg,#0a1412);color:var(--text,#f0f3e9);font-family:Inter,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text,#f0f3e9) 4%,transparent)}.result-heading{display:block;margin:0 0 18px;font-size:15px;font-weight:600;letter-spacing:0;line-height:1.6}.result-box p{font-size:13px;line-height:1.9;color:var(--muted,#a5b6aa)}.result-box:focus-within{border-color:var(--accent-border,#c3f58845)}"
+    },
+    {
+      "name": "站长验证入口",
+      "kind": "custom",
+      "refersTo": "admin-gate",
+      "description": "独立密码验证外观；真实鉴权由同源/api/admin处理。",
+      "html": "<div class=\"admin-gate\"><h1>站长工作台</h1><p>看看轻匣，正在帮到多少人。</p><label>站长密码<input type=\"password\" autocomplete=\"current-password\" placeholder=\"请输入专属访问密码\" /></label><small>独立密码保护 · 普通用户无需登录</small></div>",
+      "css": ".admin-gate{position:relative;box-sizing:border-box;width:min(100%,480px);margin:64px auto;padding:44px 40px 30px;border:1px solid var(--line-strong,#b7d7bc29);border-radius:18px;background:var(--surface,#11211b);color:var(--text,#f0f3e9);font-family:Inter,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;box-shadow:0 18px 42px color-mix(in srgb,var(--bg,#0a1412) 68%,transparent)}.admin-gate:before{content:'';position:absolute;top:-1px;left:24%;right:24%;height:1px;background:var(--accent,#c3f588);opacity:.55}.admin-gate h1{margin:0;font-size:32px;line-height:1.35;font-weight:600;letter-spacing:-.025em}.admin-gate p{font-size:15px;line-height:1.8;margin-top:14px;color:var(--muted,#a5b6aa)}.admin-gate label{display:flex;flex-direction:column;gap:10px;margin-top:34px;font-size:13px;line-height:1.7}.admin-gate input{box-sizing:border-box;min-width:0;min-height:50px;padding:13px 15px;font:16px Inter,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;border-radius:10px;border:1px solid var(--line-strong,#b7d7bc29);background:var(--bg,#0a1412);color:inherit}.admin-gate input:focus-visible{outline:2px solid var(--accent,#c3f588);outline-offset:5px}.admin-gate small{display:block;margin:26px 0 18px;color:var(--muted,#a5b6aa);font-size:12px;line-height:1.8}"
+    }
+  ],
+  "narrative": {
+    "northStar": "会呼吸的数字匣子",
+    "overview": "墨绿工作空间承载真实工具，荧光浅绿标记可以行动的位置。首页左侧的中文标题、说明和搜索保持直接；右侧玻璃匣子的面、折射、内核与悬浮薄盖提供品牌记忆。材质集中在这个对象上，工具区域以实体表面、精确边线和清楚的文字层级组织任务。\n\n浅色主题采用矿物白、墨绿文字与翡翠冰玻璃，并为正文、分隔线、强调色和图表重新赋值。此系统来自2026-10-27本地源码，记录实现规则，不代表截图、真实手机、外部评选或性能指标已经通过验证。",
+    "keyCharacteristics": [
+      "中文无衬线任务文字，首页第二行使用本地宋体子集。",
+      "墨绿与荧光浅绿有明确主从，浅色拥有独立语义颜色。",
+      "玻璃材质集中于首页立方体，任务和统计采用实体表面。",
+      "内容直接可见，装饰动效具备降级、暂停与清理。"
+    ],
+    "rules": [
+      {
+        "name": "独立浅色规则",
+        "body": "浅色直接覆盖语义token，并独立调整玻璃、地面光和图表颜色，不使用反色滤镜。",
+        "section": "colors"
+      },
+      {
+        "name": "分类着墨规则",
+        "body": "分类颜色用于图标和卡片细光，正文与任务按钮保持语义主色。",
+        "section": "colors"
+      },
+      {
+        "name": "局部材质规则",
+        "body": "玻璃立方体依靠面、透明度和反射建立深度，工具卡片及图表常态无外投影。",
+        "section": "elevation"
+      },
+      {
+        "name": "标题子集边界",
+        "body": "Noto Serif SC本地5300-byte子集仅用于已包含的首页标题字形，其他文字使用系统字型栈。",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do 从语义变量取色，分别检查深浅主题的文字、边界和状态。",
+      "Do 保持搜索、工具入口及真实结果清楚可用。",
+      "Do 让反馈对应真实操作阶段，并保留失败、忙碌、禁用和无结果状态。",
+      "Do 复用可见性暂停、减少动态和卸载清理，保留进行中的工具组件身份。"
+    ],
+    "donts": [
+      "Don't 将玻璃材质扩散到所有任务与统计容器。",
+      "Don't 以主题或装饰状态重新生成工具组件key。",
+      "Don't 接管系统光标和滚轮，或依靠hover才显示必要操作。",
+      "Don't 将示例数据、绘制预算或移动视口截图称为生产流量、性能通过或真机验证。",
+      "Don't 将现有9–11px辅助/装饰文字例外推广为正文规范。"
+    ]
+  }
+}

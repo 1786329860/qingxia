@@ -37,6 +37,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const sidebarRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 760px)').matches);
   const [theme, setTheme] = useState(() => {
@@ -69,6 +70,17 @@ export default function SiteShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname, location.search]);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const animation = contentRef.current?.animate(
+      [
+        { opacity: 0.78, transform: 'translateY(5px)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    );
+    return () => animation?.cancel();
+  }, [location.pathname]);
   useEffect(() => {
     const query = window.matchMedia('(max-width: 760px)');
     const update = () => {
@@ -271,7 +283,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
-        <main id="main-content" className="page-content" tabIndex={-1}>
+        <main id="main-content" className="page-content" tabIndex={-1} ref={contentRef}>
           {children}
         </main>
         <footer className="site-footer">

@@ -12,7 +12,6 @@ import {
   Cell,
 } from 'recharts';
 import {
-  Activity,
   Eye,
   Users,
   MousePointer2,
@@ -28,6 +27,7 @@ import {
 import { tools } from '../lib/registry';
 import { downloadText } from '../lib/files';
 import { Notice } from '../components/ToolUI';
+import './admin-surfaces.css';
 interface Counts {
   views: number;
   visitors: number;
@@ -42,16 +42,7 @@ interface Stats {
 function localDay(offset = 0) {
   return new Date(Date.now() + 8 * 3600000 + offset * 86400000).toISOString().slice(0, 10);
 }
-const colors = [
-  '#b9f97d',
-  '#5bd1b1',
-  '#8cb4ff',
-  '#c5a0ed',
-  '#f5c978',
-  '#f39595',
-  '#71b5ad',
-  '#b6c48b',
-];
+const colors = Array.from({ length: 8 }, (_, i) => `var(--chart-${i + 1})`);
 function example(): Stats {
   const daily = Array.from({ length: 7 }, (_, i) => ({
     day: localDay(i - 6),
@@ -179,10 +170,9 @@ export default function Admin() {
   if (!authenticated && !demo)
     return (
       <div className="admin-gate">
-        <div className="admin-gate-orb">
+        <div className="admin-gate-orb" aria-hidden="true">
           <LockKeyhole size={30} />
         </div>
-        <span className="eyebrow">轻匣专属 · 站长访问</span>
         <h1>站长工作台</h1>
         <p>看看轻匣，正在帮到多少人。</p>
         <form onSubmit={login}>
@@ -198,7 +188,7 @@ export default function Admin() {
               required
             />
           </label>
-          <button className="button button-primary" disabled={loading}>
+          <button className="button button-primary" disabled={loading} aria-busy={loading}>
             {loading ? '正在连接…' : '进入工作台'}
             <ArrowRight size={17} />
           </button>
@@ -237,15 +227,14 @@ export default function Admin() {
     name: tools.find((x) => x.id === t.id)?.name || t.id,
   }));
   return (
-    <div className="admin-page">
+    <div className="admin-page" data-mode={demo ? 'demo' : 'live'} aria-busy={loading}>
       <header className="admin-heading">
         <div>
-          <div className="page-kicker">
-            <Activity size={14} />
-            每一份数据，都是一次帮助
-          </div>
           <h1>
-            站长工作台<span className="live-pill">{demo ? '演示模式' : '私有统计'}</span>
+            站长工作台
+            <span className={`live-pill ${demo ? 'is-demo' : ''}`}>
+              {demo ? '演示模式' : '私有统计'}
+            </span>
           </h1>
           <p>了解每一次访问，让小工具更好用。</p>
         </div>
@@ -265,12 +254,12 @@ export default function Admin() {
       </header>
       {demo && (
         <Notice tone="warning">
-          正在展示示例数据，仅用于预览界面，不代表网站真实访问。接入 Supabase 后可查看实际统计。
+          正在展示示例数据，仅用于预览界面，不代表网站真实访问。退出示例并完成站长验证后，才能查看真实统计。
         </Notice>
       )}
       {error && <Notice tone="warning">{error}</Notice>}
       <div className="dashboard-filters">
-        <div className="segmented">
+        <div className="segmented" role="group" aria-label="统计时间范围">
           {[
             { label: '今天', n: 0 },
             { label: '近 7 天', n: 6 },
@@ -279,6 +268,7 @@ export default function Admin() {
             <button
               key={n}
               className={from === localDay(-n) && to === localDay() ? 'active' : ''}
+              aria-pressed={from === localDay(-n) && to === localDay()}
               onClick={() => {
                 const start = localDay(-n);
                 setFrom(start);
@@ -344,9 +334,10 @@ export default function Admin() {
               <Icon size={17} />
               {label}
             </span>
-            <strong>{typeof value === 'number' ? value.toLocaleString('zh-CN') : value}</strong>
+            <strong className="stat-value">
+              {typeof value === 'number' ? value.toLocaleString('zh-CN') : value}
+            </strong>
             <span className="stat-note">{note}</span>
-            <span className="stat-decoration" />
           </section>
         ))}
       </div>
@@ -357,15 +348,17 @@ export default function Admin() {
               <h2>访问与使用趋势</h2>
               <span>北京时间 · UTC+8</span>
             </div>
-            <div className="segmented">
+            <div className="segmented" role="group" aria-label="趋势时间粒度">
               <button
                 className={granularity === 'daily' ? 'active' : ''}
+                aria-pressed={granularity === 'daily'}
                 onClick={() => setGranularity('daily')}
               >
                 按日
               </button>
               <button
                 className={granularity === 'hourly' ? 'active' : ''}
+                aria-pressed={granularity === 'hourly'}
                 onClick={() => setGranularity('hourly')}
               >
                 按小时
@@ -397,7 +390,7 @@ export default function Admin() {
               工具使用
             </span>
           </div>
-          <div style={{ height: 260, width: '100%' }}>
+          <div className="trend-plot" style={{ height: 280, width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chart} margin={{ top: 10, right: 8, bottom: 0, left: -22 }}>
                 <defs>
@@ -406,16 +399,16 @@ export default function Admin() {
                     <stop offset="100%" stopColor={colors[0]} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 5" vertical={false} />
+                <CartesianGrid stroke="var(--line-strong)" strokeDasharray="2 6" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                  tick={{ fill: 'var(--muted)', fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                   minTickGap={20}
                 />
                 <YAxis
-                  tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                  tick={{ fill: 'var(--muted)', fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
@@ -423,7 +416,7 @@ export default function Admin() {
                 <Tooltip
                   contentStyle={{
                     background: 'var(--surface)',
-                    border: '1px solid var(--border)',
+                    border: '1px solid var(--line-strong)',
                     borderRadius: 12,
                     color: 'var(--text)',
                   }}
@@ -435,6 +428,7 @@ export default function Admin() {
                   stroke={colors[0]}
                   strokeWidth={2.5}
                   fill="url(#views)"
+                  isAnimationActive={false}
                 />
                 <Area
                   type="monotone"
@@ -443,6 +437,7 @@ export default function Admin() {
                   stroke={colors[1]}
                   strokeWidth={2}
                   fill="transparent"
+                  isAnimationActive={false}
                 />
                 <Area
                   type="monotone"
@@ -451,6 +446,7 @@ export default function Admin() {
                   stroke={colors[2]}
                   strokeWidth={1.5}
                   fill="transparent"
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -478,6 +474,7 @@ export default function Admin() {
                       outerRadius={96}
                       paddingAngle={3}
                       stroke="none"
+                      isAnimationActive={false}
                     >
                       {pie.map((_, i) => (
                         <Cell key={i} fill={colors[i % colors.length]} />
@@ -486,7 +483,7 @@ export default function Admin() {
                     <Tooltip
                       contentStyle={{
                         background: 'var(--surface)',
-                        border: '1px solid var(--border)',
+                        border: '1px solid var(--line-strong)',
                         borderRadius: 12,
                         color: 'var(--text)',
                       }}
@@ -549,8 +546,16 @@ export default function Admin() {
             导出 CSV
           </button>
         </div>
-        <div className="table-scroll">
+        <div
+          className="table-scroll"
+          role="region"
+          aria-label="工具使用明细，可左右滚动"
+          tabIndex={0}
+        >
           <table>
+            <caption className="sr-only">
+              所选日期内，各工具的使用次数、成功和失败次数及使用占比。
+            </caption>
             <thead>
               <tr>
                 <th>工具名称</th>
@@ -563,10 +568,10 @@ export default function Admin() {
             <tbody>
               {pie.map((t, i) => (
                 <tr key={t.id}>
-                  <td>
+                  <th scope="row">
                     <i className="table-dot" style={{ background: colors[i % colors.length] }} />
                     {t.name}
-                  </td>
+                  </th>
                   <td>{t.uses}</td>
                   <td>{t.success}</td>
                   <td>{t.errors}</td>

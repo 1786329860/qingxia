@@ -24,6 +24,12 @@ export const toolIds = [
   'random',
   'color',
   'douyin',
+  'draw-lots',
+  'wheel',
+  'coin',
+  'dice',
+  'bullet-screen',
+  'kaomoji',
 ];
 export function json(res: VercelResponse, status: number, data: unknown) {
   res.setHeader('Cache-Control', 'no-store');

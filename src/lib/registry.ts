@@ -27,6 +27,13 @@ import {
   Code2,
   ArrowLeftRight,
   Terminal,
+  Sparkles,
+  Ticket,
+  CircleDot,
+  Coins,
+  Dices,
+  MessageSquare,
+  Smile,
   type LucideIcon,
 } from 'lucide-react';
 export interface ToolMeta {
@@ -46,6 +53,7 @@ export const categories: { id: string; label: string; icon: LucideIcon }[] = [
   { id: 'text', label: '文本编码', icon: Code2 },
   { id: 'convert', label: '计算换算', icon: ArrowLeftRight },
   { id: 'dev', label: '开发工具', icon: Terminal },
+  { id: 'fun', label: '趣味工具', icon: Sparkles },
   { id: 'link', label: '链接解析', icon: Link2 },
 ];
 const t = (
@@ -214,6 +222,49 @@ export const tools: ToolMeta[] = [
     false,
     'link',
   ),
+  t('draw-lots', '随机抽签', '名单放进来，让随机替你做一个选择。', 'fun', Ticket, [
+    '抽签',
+    '名单',
+    '随机',
+    '不重复',
+    '抽奖',
+  ]),
+  t('wheel', '转盘抽奖', '转一圈，按你设置的权重揭晓结果。', 'fun', CircleDot, [
+    '转盘',
+    '轮盘',
+    '权重',
+    '抽奖',
+    '随机',
+  ]),
+  t('coin', '抛硬币', '正面还是反面，把小纠结轻轻抛起。', 'fun', Coins, [
+    '硬币',
+    '正反面',
+    '随机',
+    '抛硬币',
+  ]),
+  t('dice', '掷骰子', '从六面到二十面，每次点数都清清楚楚。', 'fun', Dices, [
+    '骰子',
+    '点数',
+    '桌游',
+    '随机',
+    '多面',
+  ]),
+  t('bullet-screen', '手持弹幕', '把想说的话，变成一块随身发光的屏幕。', 'fun', MessageSquare, [
+    '弹幕',
+    '应援',
+    '滚动',
+    '全屏',
+    '手持',
+    '常亮',
+  ]),
+  t('kaomoji', '颜文字', '一句心情，用一个可爱的表情表达。', 'fun', Smile, [
+    '颜文字',
+    '表情',
+    '开心',
+    '抱抱',
+    '加油',
+    '复制',
+  ]),
 ];
 export function getTool(id: string) {
   return tools.find((tool) => tool.id === id);

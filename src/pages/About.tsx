@@ -27,7 +27,7 @@ export default function About() {
         </h2>
         <p>
           当前版本 0.1.0 · {tools.filter((t) => t.mode === 'local').length} 个本地工具与 1
-          个实验性链接解析工具。后续会逐步加入趣味工具，不提供 AI 生成或付费接口功能。
+          个实验性链接解析工具，包含六类纯本地趣味工具。不提供 AI 生成或付费接口功能。
         </p>
         {categories.map((category) => (
           <div key={category.id} className="about-tool-group">

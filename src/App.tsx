@@ -47,6 +47,14 @@ const pages: Record<string, ReturnType<typeof lazy>> = {
   random: lazy(() => import('./tools/developer').then((m) => ({ default: m.RandomTool }))),
   color: lazy(() => import('./tools/developer').then((m) => ({ default: m.ColorTool }))),
   douyin: lazy(() => import('./tools/douyin')),
+  'draw-lots': lazy(() => import('./tools/fun-random').then((m) => ({ default: m.LotsTool }))),
+  wheel: lazy(() => import('./tools/fun-random').then((m) => ({ default: m.WheelTool }))),
+  coin: lazy(() => import('./tools/fun-random').then((m) => ({ default: m.CoinTool }))),
+  dice: lazy(() => import('./tools/fun-random').then((m) => ({ default: m.DiceTool }))),
+  'bullet-screen': lazy(() =>
+    import('./tools/fun-display').then((m) => ({ default: m.BulletScreenTool })),
+  ),
+  kaomoji: lazy(() => import('./tools/fun-display').then((m) => ({ default: m.KaomojiTool }))),
 };
 function Loading() {
   return (

@@ -23,10 +23,16 @@ const ids = [
   'random',
   'color',
   'douyin',
+  'draw-lots',
+  'wheel',
+  'coin',
+  'dice',
+  'bullet-screen',
+  'kaomoji',
 ];
 test('首页搜索、收藏与最近使用持久化', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.tool-card')).toHaveCount(22);
+  await expect(page.locator('.tool-card')).toHaveCount(28);
   await page.getByRole('textbox', { name: '搜索工具' }).fill('JSON');
   await expect(page.locator('.tool-card')).toHaveCount(2);
   await page.getByRole('button', { name: '收藏JSON 格式化', exact: true }).click();
@@ -39,7 +45,7 @@ test('首页搜索、收藏与最近使用持久化', async ({ page }) => {
   await page.goto('/?view=recent');
   await expect(page.locator('.tool-card').first()).toContainText('JSON 格式化');
 });
-test('22个工具路由正常加载且无运行时崩溃', async ({ page }) => {
+test('28个工具路由正常加载且无运行时崩溃', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   for (const id of ids) {

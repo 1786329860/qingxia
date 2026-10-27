@@ -40,7 +40,9 @@ export default function SiteShell({ children }: { children: ReactNode }) {
   const sidebarRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 760px)').matches);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
+  );
   const [theme, setTheme] = useState(() => {
     try {
       return localStorage.getItem('qingxia:theme') === 'light' ? 'light' : 'dark';

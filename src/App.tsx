@@ -15,6 +15,7 @@ import Home from './components/Home';
 import { getTool, categories } from './lib/registry';
 import { useFavorites, rememberTool } from './lib/preferences';
 import { trackPageView } from './lib/analytics';
+import { getPageSeo, updateDocumentSeo } from './lib/seo';
 const Admin = lazy(() => import('./pages/Admin'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const About = lazy(() => import('./pages/About'));
@@ -133,7 +134,15 @@ function ToolRoute() {
       <div className="tool-panel">
         <PageBoundary key={id}>
           <Suspense fallback={<Loading />}>
-            <View />
+            {typeof window === 'undefined' ? (
+              <p className="muted">
+                {tool.mode === 'local'
+                  ? '本工具在浏览器内处理，请启用 JavaScript 后使用。文件与输入正文不上传。'
+                  : '请启用 JavaScript 后粘贴公开作品分享链接。实验性解析与下载受平台访问策略限制。'}
+              </p>
+            ) : (
+              <View />
+            )}
           </Suspense>
         </PageBoundary>
       </div>
@@ -166,15 +175,9 @@ function NotFound() {
   );
 }
 function RouteEffects() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  useEffect(() => updateDocumentSeo(getPageSeo(pathname, search)), [pathname, search]);
   useEffect(() => {
-    const id = pathname.startsWith('/tool/') ? pathname.slice(6) : '';
-    document.title =
-      id && getTool(id)
-        ? `${getTool(id)!.name} · 轻匣`
-        : pathname === '/admin'
-          ? '站长工作台 · 轻匣'
-          : '轻匣 · 把日常小事，轻轻解决';
     window.scrollTo({ top: 0, behavior: 'instant' });
     const timer = setTimeout(() => trackPageView(pathname), 100);
     return () => clearTimeout(timer);

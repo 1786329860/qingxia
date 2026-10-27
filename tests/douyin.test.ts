@@ -3,11 +3,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import handler from '../api/resolve';
 import {
   assertShareURL,
+  DouyinResolveError,
   extractShareURL,
   fetchSharePage,
   parseDouyinHTML,
   safeMediaURL,
   shareItemID,
+  unresolvedPageError,
 } from '../api/_lib/douyin';
 
 const videoItem = {
@@ -116,6 +118,54 @@ describe('Douyin public hydration parsing', () => {
     const html = `<script id="RENDER_DATA">${JSON.stringify({ recommended, target })}</script>`;
     expect(parseDouyinHTML(html, '123')?.title).toBe('用户实际分享的作品');
     expect(parseDouyinHTML(html, '456')).toBeNull();
+  });
+});
+
+describe('public-page failure classification', () => {
+  it('separates an explicit challenge, login gate and deleted work', () => {
+    expect(unresolvedPageError('<h1>请完成安全验证</h1>', '123')).toMatchObject({
+      code: 'PLATFORM_CHALLENGE',
+      stage: 'page',
+      status: 422,
+    });
+    expect(unresolvedPageError('<p>登录后才能查看</p>', '123')).toMatchObject({
+      code: 'PLATFORM_LOGIN_REQUIRED',
+      stage: 'page',
+      status: 422,
+    });
+    expect(unresolvedPageError('<p>作品已删除</p>', '123')).toMatchObject({
+      code: 'CONTENT_UNAVAILABLE',
+      stage: 'page',
+      status: 404,
+    });
+  });
+
+  it('does not infer a challenge from unrelated script strings or a generic login button', () => {
+    const error = unresolvedPageError(
+      '<script>const label="验证码";</script><button>登录</button><div id="root"></div>',
+      '123',
+    );
+    expect(error).toMatchObject({ code: 'PUBLIC_DATA_UNAVAILABLE', stage: 'page' });
+    expect(error.message).toContain('公开页面未包含');
+  });
+
+  it('distinguishes malformed data, mismatched work and absent media', () => {
+    expect(unresolvedPageError('<script id="RENDER_DATA">%BAD</script>', '123').code).toBe(
+      'PAGE_FORMAT_UNSUPPORTED',
+    );
+    expect(
+      unresolvedPageError(
+        `<script id="RENDER_DATA">${JSON.stringify({ aweme_id: '999', video: videoItem.video })}</script>`,
+        '123',
+      ).code,
+    ).toBe('SHARED_ITEM_UNAVAILABLE');
+    expect(
+      unresolvedPageError('<script id="RENDER_DATA">{"aweme_id":"123","video":{}}</script>', '123')
+        .code,
+    ).toBe('MEDIA_UNAVAILABLE');
+    expect(
+      unresolvedPageError(`<script id="RENDER_DATA">${JSON.stringify(videoItem)}</script>`).code,
+    ).toBe('SHARE_ITEM_REQUIRED');
   });
 });
 
@@ -248,14 +298,68 @@ describe('bounded public-page retrieval', () => {
       ),
     ).rejects.toThrow('暂未允许');
   });
+
+  it('preserves typed upstream status and rejects timeout/network failures without exposing URLs', async () => {
+    await expect(
+      fetchSharePage(
+        new URL('https://www.douyin.com/video/123'),
+        mockFetch(async () => htmlResponse('gone', 410)),
+      ),
+    ).rejects.toMatchObject({ code: 'CONTENT_UNAVAILABLE', status: 404, stage: 'page' });
+    await expect(
+      fetchSharePage(
+        new URL('https://www.douyin.com/video/123'),
+        mockFetch(async () => htmlResponse('limited', 429)),
+      ),
+    ).rejects.toMatchObject({ code: 'PLATFORM_RATE_LIMITED', status: 429 });
+    await expect(
+      fetchSharePage(
+        new URL('https://www.douyin.com/video/123'),
+        mockFetch(async () => {
+          throw new DOMException('sensitive URL must not be echoed', 'TimeoutError');
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'PLATFORM_TIMEOUT', status: 504 });
+    const failure = fetchSharePage(
+      new URL('https://www.douyin.com/video/123'),
+      mockFetch(async () => {
+        throw new TypeError('https://sensitive.example/?token=DO_NOT_ECHO');
+      }),
+    );
+    await expect(failure).rejects.toBeInstanceOf(DouyinResolveError);
+    await expect(failure).rejects.toMatchObject({ code: 'PLATFORM_NETWORK_ERROR', status: 502 });
+    await expect(failure).rejects.not.toThrow('DO_NOT_ECHO');
+  });
+
+  it('keeps access restrictions, upstream server errors and empty HTML distinct', async () => {
+    const url = new URL('https://www.douyin.com/video/123');
+    await expect(
+      fetchSharePage(
+        url,
+        mockFetch(async () => htmlResponse('forbidden', 403)),
+      ),
+    ).rejects.toMatchObject({ code: 'PLATFORM_ACCESS_DENIED', status: 502 });
+    await expect(
+      fetchSharePage(
+        url,
+        mockFetch(async () => htmlResponse('unavailable', 503)),
+      ),
+    ).rejects.toMatchObject({ code: 'PLATFORM_HTTP_ERROR', status: 502 });
+    await expect(
+      fetchSharePage(
+        url,
+        mockFetch(async () => htmlResponse('')),
+      ),
+    ).rejects.toMatchObject({ code: 'PLATFORM_EMPTY', status: 502 });
+  });
 });
 
-function request(body: unknown, origin = 'https://qingxia.example') {
+function request(body: unknown, origin = 'https://qingxia.example', ip = '198.51.100.19') {
   return {
     method: 'POST',
     body,
     headers: { origin, host: 'qingxia.example', 'content-type': 'application/json' },
-    socket: { remoteAddress: '198.51.100.19' },
+    socket: { remoteAddress: ip },
   } as unknown as VercelRequest;
 }
 function response() {
@@ -317,5 +421,73 @@ describe('resolve API safety and honest failure responses', () => {
       }),
     );
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects profile/search links before fetching or selecting any recommended work', async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+    const res = response();
+    await handler(
+      request({ url: 'https://www.douyin.com/user/profile' }, undefined, '198.51.100.20'),
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'SHARE_ITEM_REQUIRED', stage: 'input' }),
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('does not use the first recommended work when a short link never reveals its target ID', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        htmlResponse(`<script id="RENDER_DATA">${JSON.stringify(videoItem)}</script>`),
+      ),
+    );
+    const res = response();
+    await handler(request({ url: 'https://v.douyin.com/abc/' }, undefined, '198.51.100.21'), res);
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'SHARE_ITEM_REQUIRED',
+        stage: 'metadata',
+        experimental: true,
+      }),
+    );
+  });
+
+  it('returns meaningful upstream failures instead of labeling a valid URL as bad input', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => htmlResponse('gone', 404)),
+    );
+    const res = response();
+    await handler(
+      request({ url: 'https://www.douyin.com/video/123' }, undefined, '198.51.100.22'),
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'CONTENT_UNAVAILABLE', stage: 'page' }),
+    );
+  });
+
+  it('classifies a public JavaScript shell as missing public data, not a verified login or CAPTCHA failure', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        htmlResponse('<html><div id="root"></div><script src="/bundle.js"></script></html>'),
+      ),
+    );
+    const res = response();
+    await handler(
+      request({ url: 'https://www.douyin.com/video/123' }, undefined, '198.51.100.23'),
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'PUBLIC_DATA_UNAVAILABLE', stage: 'page' }),
+    );
   });
 });

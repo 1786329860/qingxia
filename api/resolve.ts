@@ -1,7 +1,14 @@
 import { randomBytes, createHmac } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { body, consumeRate, db, json, sameOrigin } from './_lib/core.js';
-import { extractShareURL, fetchSharePage, parseDouyinHTML, shareItemID } from './_lib/douyin.js';
+import {
+  DouyinResolveError,
+  extractShareURL,
+  fetchSharePage,
+  parseDouyinHTML,
+  shareItemID,
+  unresolvedPageError,
+} from './_lib/douyin.js';
 const memory = new Map<string, { count: number; until: number }>();
 const memoryKey = randomBytes(32);
 function localLimit(req: VercelRequest) {
@@ -29,21 +36,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 400, { error: '分享内容无效或过长' });
   try {
     const url = extractShareURL(value);
+    if (url.hostname !== 'v.douyin.com' && !shareItemID(url))
+      throw new DouyinResolveError(
+        'SHARE_ITEM_REQUIRED',
+        'input',
+        '请使用具体作品的分享链接，账号主页和搜索页暂不支持。',
+        400,
+      );
     const allowed = db() ? await consumeRate(req, 'resolve', 6, 60) : localLimit(req);
     if (!allowed) return json(res, 429, { error: '解析请求过于频繁，请一分钟后再试。' });
     const page = await fetchSharePage(url);
-    const result = parseDouyinHTML(page.html, shareItemID(page.url) || shareItemID(url));
-    if (!result)
-      return json(res, 422, {
-        error:
-          '平台未提供可读取的公开媒体信息，可能需要登录、已限制访问或更改了页面结构。本站不会绕过登录或验证码，请换一个公开分享链接或稍后重试。',
-      });
+    const expectedID = shareItemID(page.url) || shareItemID(url);
+    if (!expectedID) throw unresolvedPageError(page.html);
+    const result = parseDouyinHTML(page.html, expectedID);
+    if (!result) throw unresolvedPageError(page.html, expectedID);
     return json(res, 200, {
       ...result,
       experimental: true,
       notice: '直链可能过期，浏览器下载取决于平台跨域与防盗链设置。',
     });
   } catch (error) {
+    if (error instanceof DouyinResolveError)
+      return json(res, error.status, {
+        error: error.message,
+        code: error.code,
+        stage: error.stage,
+        experimental: true,
+      });
     const message = error instanceof Error ? error.message : '';
     const known = /^(请粘贴|仅支持|分享|平台)/.test(message);
     return json(res, known ? 400 : 502, {

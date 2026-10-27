@@ -26,7 +26,7 @@ export default function DouyinTool() {
     setResult(null);
     const controller = new AbortController();
     abort.current = controller;
-    const timer = setTimeout(() => controller.abort(), 25000);
+    const timer = setTimeout(() => controller.abort('timeout'), 25000);
     try {
       const response = await fetch('/api/resolve', {
         method: 'POST',
@@ -41,7 +41,13 @@ export default function DouyinTool() {
       setResult(data);
       trackToolUse('douyin');
     } catch (e) {
-      setError(controller.signal.aborted ? '解析已取消或超时，请稍后再试。' : errorMessage(e));
+      setError(
+        controller.signal.aborted
+          ? controller.signal.reason === 'user'
+            ? '解析已取消。'
+            : '解析超时，请稍后再试。'
+          : errorMessage(e),
+      );
       trackToolUse('douyin', 'error');
     } finally {
       clearTimeout(timer);
@@ -55,7 +61,7 @@ export default function DouyinTool() {
     setError('');
     const controller = new AbortController();
     abort.current = controller;
-    const timer = setTimeout(() => controller.abort(), 90000);
+    const timer = setTimeout(() => controller.abort('timeout'), 90000);
     try {
       const item = result.items[index];
       const response = await fetch(item.url, {
@@ -99,9 +105,13 @@ export default function DouyinTool() {
     } catch (e) {
       const message = errorMessage(e);
       setError(
-        e instanceof TypeError
-          ? '平台未允许浏览器跨域下载。本站不会上传或中转媒体，当前链接无法在此直接保存。可重新解析或稍后再试。'
-          : message,
+        controller.signal.aborted
+          ? controller.signal.reason === 'user'
+            ? '下载已取消，未保存不完整文件。'
+            : '下载超时，未保存不完整文件。请重新解析或稍后再试。'
+          : e instanceof TypeError
+            ? '浏览器无法读取媒体，可能是跨域、防盗链或网络限制。本站不会上传或中转媒体，请重新解析或稍后再试。'
+            : message,
       );
     } finally {
       clearTimeout(timer);
@@ -124,12 +134,16 @@ export default function DouyinTool() {
         />
       </Field>
       <div className="button-row">
-        <ActionButton busy={busy} disabled={!input.trim()} onClick={() => void resolve()}>
+        <ActionButton
+          busy={busy}
+          disabled={!input.trim() || downloading !== null}
+          onClick={() => void resolve()}
+        >
           <Link2 size={16} />
           解析链接
         </ActionButton>
         {busy && (
-          <button className="button button-secondary" onClick={() => abort.current?.abort()}>
+          <button className="button button-secondary" onClick={() => abort.current?.abort('user')}>
             取消
           </button>
         )}
@@ -173,7 +187,10 @@ export default function DouyinTool() {
             ))}
           </div>
           {downloading !== null && (
-            <button className="button button-secondary" onClick={() => abort.current?.abort()}>
+            <button
+              className="button button-secondary"
+              onClick={() => abort.current?.abort('user')}
+            >
               取消下载
             </button>
           )}

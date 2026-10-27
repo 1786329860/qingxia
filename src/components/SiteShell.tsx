@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { categories, getTool, tools } from '../lib/registry';
 import { useFavorites } from '../lib/preferences';
+import { feedbackMailto } from '../lib/contact';
 
 function Brand() {
   return (
@@ -295,6 +296,8 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <Check size={13} />
             免费使用<span className="footer-dot">·</span>无广告<span className="footer-dot">·</span>
             <Link to="/privacy">隐私优先</Link>
+            <span className="footer-dot">·</span>
+            <a href={feedbackMailto}>反馈与建议</a>
             <Sparkles size={13} />
           </span>
         </footer>

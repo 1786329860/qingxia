@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Box, ArrowUpRight, Sparkles } from 'lucide-react';
 import { tools, categories } from '../lib/registry';
+import FeedbackContact from '../components/FeedbackContact';
 export default function About() {
   return (
     <article className="prose-page">
@@ -54,6 +55,7 @@ export default function About() {
         </p>
         <p>工具用于日常便利，不替代专业软件。请先用副本处理重要文件，并在使用结果前检查内容。</p>
       </section>
+      <FeedbackContact />
       <Link className="button button-secondary" to="/privacy">
         了解隐私说明
         <ArrowUpRight size={15} />

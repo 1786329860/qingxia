@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN, PUBLIC_PATHS } from '../../src/lib/seo';
+import { tools } from '../../src/lib/registry';
 
 test('站点地图与robots返回真实文件，公开工具完整且不列私有地址', async ({ request }) => {
   const robots = await request.get('/robots.txt');
@@ -26,7 +27,7 @@ test('禁用JavaScript仍能读取首页和工具介绍，爬虫无需运行重�
   });
   await page.goto('/');
   await expect(page).toHaveTitle('轻匣 - 免费无广告在线工具箱');
-  await expect(page.locator('.tool-card')).toHaveCount(28);
+  await expect(page.locator('.tool-card')).toHaveCount(tools.length);
   await expect(page.getByRole('heading', { name: /把日常小事/ })).toBeVisible();
   await page.locator('a.tool-card-link[href="/tool/douyin"]').click();
   await expect(page).toHaveTitle(/抖音链接解析.*轻匣/);

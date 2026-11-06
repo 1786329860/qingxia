@@ -12,6 +12,8 @@ export const toolIds = [
   'video-frames',
   'video-gif',
   'extract-audio',
+  'audio-convert',
+  'suno-download',
   'json',
   'base64',
   'text-lines',

@@ -135,6 +135,22 @@ export const tools: ToolMeta[] = [
     '提取',
   ]),
   t(
+    'audio-convert',
+    '音频格式转换',
+    '在浏览器转换 MP3、WAV、M4A、FLAC 或 OGG。',
+    'media',
+    ArrowLeftRight,
+    ['音频', '转码', '转换', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'],
+  ),
+  t(
+    'suno-download',
+    'Suno 下载入口',
+    '从分享链接打开 Suno 作品页，通过官方渠道下载。',
+    'link',
+    Music2,
+    ['Suno', '音乐', '分享链接', 'mp3', 'wav', '下载'],
+  ),
+  t(
     'json',
     'JSON 格式化',
     '整理、校验、压缩，结构一目了然。',

@@ -5,6 +5,8 @@ import { dirname, resolve } from 'node:path';
 
 const server = await createServer({
   configFile: false,
+  // Do not invalidate a running development server's optimized dependencies.
+  cacheDir: 'node_modules/.vite-prerender',
   plugins: [react()],
   mode: 'production',
   logLevel: 'error',

@@ -36,6 +36,7 @@ test('趣味分类、关键词搜索、工具收藏与最近使用完整接入',
   await expect(page.locator('.tool-card')).toHaveCount(1);
   await page.goto('/tool/wheel');
   await expect(page.getByRole('heading', { name: '转盘抽奖', exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '选项 1 名称' })).toBeVisible();
   await page.goto('/?view=recent');
   await expect(page.locator('.tool-card').first()).toContainText('转盘抽奖');
 });

@@ -11,6 +11,8 @@ const ids = [
   'video-frames',
   'video-gif',
   'extract-audio',
+  'audio-convert',
+  'suno-download',
   'json',
   'base64',
   'text-lines',
@@ -32,7 +34,7 @@ const ids = [
 ];
 test('首页搜索、收藏与最近使用持久化', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.tool-card')).toHaveCount(28);
+  await expect(page.locator('.tool-card')).toHaveCount(ids.length);
   await page.getByRole('textbox', { name: '搜索工具' }).fill('JSON');
   await expect(page.locator('.tool-card')).toHaveCount(2);
   await page.getByRole('button', { name: '收藏JSON 格式化', exact: true }).click();
@@ -42,10 +44,11 @@ test('首页搜索、收藏与最近使用持久化', async ({ page }) => {
   await expect(page.locator('.tool-card')).toHaveCount(1);
   await page.goto('/tool/json');
   await expect(page.getByRole('heading', { name: 'JSON 格式化', exact: true })).toBeVisible();
+  await expect(page.locator('.tool-panel textarea').first()).toBeVisible();
   await page.goto('/?view=recent');
   await expect(page.locator('.tool-card').first()).toContainText('JSON 格式化');
 });
-test('28个工具路由正常加载且无运行时崩溃', async ({ page }) => {
+test('所有工具路由正常加载且无运行时崩溃', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   for (const id of ids) {
@@ -55,6 +58,31 @@ test('28个工具路由正常加载且无运行时崩溃', async ({ page }) => {
     await expect(page.locator('.tool-page-header h1')).toBeVisible();
   }
   expect(errors).toEqual([]);
+});
+test('Suno 分享文案在本地提取，作品按钮只打开官方地址', async ({ page }) => {
+  const privateLink = 'https://www.suno.com/s/ABcd-3412?tracking=PRIVATE_4321';
+  const requests: string[] = [];
+  page.on('request', (req) => requests.push(req.url() + (req.postData() || '')));
+  await page.goto('/tool/suno-download');
+  const input = page.getByLabel('Suno 分享链接或文案');
+  await input.fill('https://suno.com.evil.example/song/ABcd-3412');
+  await page.getByRole('button', { name: '提取作品链接' }).click();
+  await expect(page.getByText('请粘贴 Suno 的单首歌曲分享链接', { exact: false })).toBeVisible();
+  await input.fill('分享给你这首歌：' + privateLink + '。');
+  await page.getByRole('button', { name: '提取作品链接' }).click();
+  await expect(page.getByRole('link', { name: '打开 Suno 作品' })).toHaveAttribute(
+    'href',
+    'https://suno.com/s/ABcd-3412',
+  );
+  await expect(page.getByRole('link', { name: '打开我的 Suno 资料库' })).toHaveAttribute(
+    'href',
+    'https://suno.com/me',
+  );
+  await expect(page.getByRole('link', { name: '已保存音频？去本地转换格式' })).toHaveAttribute(
+    'href',
+    '/tool/audio-convert',
+  );
+  expect(requests.every((value) => !/suno\.com|PRIVATE_4321/.test(value))).toBe(true);
 });
 test('JSON完整处理、真实下载与匿名事件不含输入', async ({ page }) => {
   const posted: string[] = [];

@@ -1,5 +1,6 @@
 import { test, expect, mockMember } from './member-fixture';
 import type { Page } from '@playwright/test';
+import { tools } from '../../src/lib/registry';
 
 async function pngFixture(page: Page) {
   const data = await page.evaluate(() => {
@@ -155,7 +156,7 @@ test('390与320触屏布局、键盘导航和主题对比不依赖悬停', async
     await mockMember(context);
     const page = await context.newPage();
     await page.goto(test.info().project.use.baseURL + '/');
-    await expect(page.locator('.tool-card')).toHaveCount(28);
+    await expect(page.locator('.tool-card')).toHaveCount(tools.length);
     await page.getByRole('button', { name: /^收藏/ }).first().tap();
     await expect(page.getByRole('button', { name: /^取消收藏/ }).first()).toHaveAttribute(
       'aria-pressed',

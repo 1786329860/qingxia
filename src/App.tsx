@@ -41,6 +41,10 @@ const pages: Record<string, ReturnType<typeof lazy>> = {
   'extract-audio': lazy(() =>
     import('./tools/media').then((m) => ({ default: m.ExtractAudioTool })),
   ),
+  'audio-convert': lazy(() =>
+    import('./tools/media').then((m) => ({ default: m.AudioConvertTool })),
+  ),
+  'suno-download': lazy(() => import('./tools/suno')),
   json: lazy(() => import('./tools/text').then((m) => ({ default: m.JsonTool }))),
   base64: lazy(() => import('./tools/text').then((m) => ({ default: m.Base64Tool }))),
   'text-lines': lazy(() => import('./tools/text').then((m) => ({ default: m.TextLinesTool }))),

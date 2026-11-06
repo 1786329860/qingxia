@@ -130,7 +130,7 @@ test.beforeAll(async ({ browser, baseURL }) => {
   }
 });
 
-function watchRequests(page: Page) {
+function watchRequests(page: Page, privateName = fixtureName) {
   const requests: Request[] = [];
   page.on('request', (request) => requests.push(request));
   return () => {
@@ -138,7 +138,7 @@ function watchRequests(page: Page) {
     for (const request of writes) {
       expect(new URL(request.url()).pathname).toBe('/api/events');
       const payload = request.postData() || '';
-      expect(payload).not.toContain(fixtureName);
+      expect(payload).not.toContain(privateName);
       expect(request.headers()['content-type']).toContain('application/json');
       const event = JSON.parse(payload);
       expect(
@@ -209,6 +209,56 @@ test('视频本地抽帧，ZIP 内包含可解码的真实 JPG，文件无上传
       return size;
     }, Array.from(data));
     expect(dimensions).toEqual({ width: 160, height: 96 });
+  }
+  assertNoUpload();
+});
+
+test('音频格式转换生成五种可识别文件，音频及文件名留在浏览器', async ({ page }) => {
+  const filename = 'private-audio-52418.wav';
+  const assertNoUpload = watchRequests(page, filename);
+  const samples = 22050;
+  const input = Buffer.alloc(44 + samples * 2);
+  input.write('RIFF', 0);
+  input.writeUInt32LE(input.length - 8, 4);
+  input.write('WAVEfmt ', 8);
+  input.writeUInt32LE(16, 16);
+  input.writeUInt16LE(1, 20);
+  input.writeUInt16LE(1, 22);
+  input.writeUInt32LE(44100, 24);
+  input.writeUInt32LE(88200, 28);
+  input.writeUInt16LE(2, 32);
+  input.writeUInt16LE(16, 34);
+  input.write('data', 36);
+  input.writeUInt32LE(samples * 2, 40);
+  for (let i = 0; i < samples; i++)
+    input.writeInt16LE(Math.round(Math.sin(i / 16) * 16000), 44 + i * 2);
+  await page.goto('/tool/audio-convert');
+  await page
+    .locator('input[type=file]')
+    .setInputFiles({ name: filename, mimeType: 'audio/wav', buffer: input });
+  const headers = {
+    mp3: [0, 'ID3'],
+    wav: [0, 'RIFF'],
+    m4a: [4, 'ftyp'],
+    flac: [0, 'fLaC'],
+    ogg: [0, 'OggS'],
+  } as const;
+  for (const [format, [offset, header]] of Object.entries(headers)) {
+    await page.getByLabel('输出格式').selectOption(format);
+    await page.getByRole('button', { name: '开始转换', exact: true }).click();
+    await expect(page.getByText('private-audio-52418-转换.' + format, { exact: true })).toBeVisible(
+      {
+        timeout: 90_000,
+      },
+    );
+    const output = await downloadResult(page);
+    expect(output.length).toBeGreaterThan(1000);
+    expect(output.toString('ascii', offset, offset + header.length)).toBe(header);
+    if (format !== 'm4a') {
+      // AAC preview support depends on the browser build. The exported M4A
+      // container is still verified and playable in a compatible player.
+      expect(Math.abs((await decodeAudioDuration(page, output)) - 0.5)).toBeLessThan(0.1);
+    }
   }
   assertNoUpload();
 });

@@ -31,6 +31,20 @@ import {
 
 type MediaResult = { name: string; blob: Blob; time?: number };
 const videoAccept = 'video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi';
+const audioAccept = 'audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.aif,.aiff,.webm,.wma,.amr';
+const audioFormats = {
+  mp3: { label: 'MP3 · 通用压缩音频', mime: 'audio/mpeg', codec: 'libmp3lame', usesBitrate: true },
+  wav: { label: 'WAV · 未压缩 PCM', mime: 'audio/wav', codec: 'pcm_s16le', usesBitrate: false },
+  m4a: { label: 'M4A · AAC 压缩音频', mime: 'audio/mp4', codec: 'aac', usesBitrate: true },
+  flac: { label: 'FLAC · 无损压缩', mime: 'audio/flac', codec: 'flac', usesBitrate: false },
+  ogg: {
+    label: 'OGG · Vorbis 压缩音频',
+    mime: 'audio/ogg',
+    codec: 'libvorbis',
+    usesBitrate: false,
+  },
+} as const;
+type AudioFormat = keyof typeof audioFormats;
 function isMobileDevice() {
   return typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 }
@@ -408,7 +422,7 @@ async function withFFmpeg(
   execute: (ffmpeg: FFmpegInstance, inputName: string) => Promise<MediaResult>,
 ): Promise<MediaResult> {
   if (typeof Worker === 'undefined' || typeof WebAssembly === 'undefined')
-    throw new Error('当前浏览器不支持本地视频处理，请使用新版桌面 Chrome、Edge 或 Firefox。');
+    throw new Error('当前浏览器不支持本地媒体处理，请使用新版桌面 Chrome、Edge 或 Firefox。');
   const limit = isMobileDevice() ? 60 : 150;
   checkFileSize(file, limit);
   assertNotAborted(signal);
@@ -543,6 +557,12 @@ async function readOutput(
     !(head.startsWith('ID3') || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0))
   )
     throw new Error('MP3 编码结果无效。');
+  if (
+    (mime === 'audio/mp4' && head.slice(4, 8) !== 'ftyp') ||
+    (mime === 'audio/flac' && !head.startsWith('fLaC')) ||
+    (mime === 'audio/ogg' && !head.startsWith('OggS'))
+  )
+    throw new Error('输出音频的文件格式无效。');
   await ffmpeg.deleteFile(name);
   return new Blob([bytes], { type: mime });
 }
@@ -752,17 +772,28 @@ export function VideoGifTool() {
 }
 
 export function ExtractAudioTool() {
+  return <AudioTool convert={false} />;
+}
+
+export function AudioConvertTool() {
+  return <AudioTool convert />;
+}
+
+function AudioTool({ convert }: { convert: boolean }) {
   const [file, setFile] = useState<File | null>(null);
-  const [format, setFormat] = useState('mp3');
+  const [format, setFormat] = useState<AudioFormat>('mp3');
   const [bitrate, setBitrate] = useState('192');
   const [result, setResult] = useState<MediaResult | null>(null);
   const [stage, setStage] = useState('');
-  const task = useToolTask('extract-audio');
+  const task = useToolTask(convert ? 'audio-convert' : 'extract-audio');
   const controller = useRef<AbortController | null>(null);
+  const settings = audioFormats[format];
+  const choices: AudioFormat[] = convert ? ['mp3', 'wav', 'm4a', 'flac', 'ogg'] : ['mp3', 'wav'];
   useEffect(() => () => controller.current?.abort(), []);
   function choose(files: File[]) {
     const selected = files[0];
     if (!selected) return;
+    setFile(null);
     setResult(null);
     task.setError('');
     try {
@@ -774,7 +805,7 @@ export function ExtractAudioTool() {
   }
   async function process() {
     await task.run(async () => {
-      if (!file) throw new Error('请先选择含音轨的视频文件。');
+      if (!file) throw new Error(convert ? '请先选择音频文件。' : '请先选择含音轨的视频文件。');
       const abort = new AbortController();
       controller.current = abort;
       setResult(null);
@@ -788,10 +819,10 @@ export function ExtractAudioTool() {
           },
           async (engine, input) => {
             const maxBytes = (isMobileDevice() ? 60 : 120) * 1024 * 1024;
-            const args =
-              format === 'wav'
-                ? ['-c:a', 'pcm_s16le', '-ar', '44100']
-                : ['-c:a', 'libmp3lame', '-b:a', `${bitrate}k`];
+            const args = ['-c:a', settings.codec];
+            if (settings.usesBitrate) args.push('-b:a', `${bitrate}k`);
+            if (format === 'ogg') args.push('-q:a', '5');
+            if (format === 'wav' && !convert) args.push('-ar', '44100');
             const code = await engine.exec([
               '-i',
               input,
@@ -805,15 +836,12 @@ export function ExtractAudioTool() {
             ]);
             if (code !== 0)
               throw new Error(
-                '提取失败：文件可能没有音轨，或编码不受支持。请尝试其他视频；静音视频无法生成音频。',
+                convert
+                  ? '转换失败。文件可能已损坏、没有音轨或使用了不受支持的编码，请尝试其他文件或目标格式。'
+                  : '提取失败：文件可能没有音轨，或编码不受支持。请尝试其他视频；静音视频无法生成音频。',
               );
-            const blob = await readOutput(
-              engine,
-              `output.${format}`,
-              format === 'wav' ? 'audio/wav' : 'audio/mpeg',
-              maxBytes,
-            );
-            return { name: `${baseName(file.name)}.${format}`, blob };
+            const blob = await readOutput(engine, `output.${format}`, settings.mime, maxBytes);
+            return { name: `${baseName(file.name)}${convert ? '-转换' : ''}.${format}`, blob };
           },
         );
         setResult(output);
@@ -824,16 +852,17 @@ export function ExtractAudioTool() {
   }
   return (
     <div className="tool-workspace">
-      <VideoAdvice />
+      {!convert && <VideoAdvice />}
       <Notice>
-        提取视频中的第一条音轨。MP3 体积较小；WAV 为未压缩
-        PCM，文件可能明显增大。首次使用会加载本站的本地处理引擎。
+        {convert
+          ? '在浏览器中转换第一条音轨，可选 MP3、WAV、M4A、FLAC 或 OGG。首次转换会加载本地处理引擎，文件留在当前设备。'
+          : '提取视频中的第一条音轨。MP3 体积较小；WAV 为未压缩 PCM，文件可能明显增大。首次使用会加载本站的本地处理引擎。'}
       </Notice>
       <FileDropzone
-        accept={videoAccept}
+        accept={convert ? audioAccept : videoAccept}
         onFiles={choose}
         disabled={task.busy}
-        hint={`MP4 / MOV / WebM 等；单文件上限 ${isMobileDevice() ? 60 : 150} MB`}
+        hint={`${convert ? 'MP3 / WAV / M4A / FLAC / OGG 等' : 'MP4 / MOV / WebM 等'}；单文件上限 ${isMobileDevice() ? 60 : 150} MB`}
       />
       {file && (
         <SourceFile
@@ -848,16 +877,26 @@ export function ExtractAudioTool() {
       )}
       <div className="controls-grid">
         <Field label="输出格式">
-          <select value={format} onChange={(e) => setFormat(e.target.value)} disabled={task.busy}>
-            <option value="mp3">MP3 · 通用压缩音频</option>
-            <option value="wav">WAV · 未压缩 PCM</option>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value as AudioFormat)}
+            disabled={task.busy}
+          >
+            {choices.map((option) => (
+              <option key={option} value={option}>
+                {audioFormats[option].label}
+              </option>
+            ))}
           </select>
         </Field>
-        <Field label="MP3 比特率" hint={format === 'wav' ? 'WAV 不使用此参数' : undefined}>
+        <Field
+          label={convert ? '比特率' : 'MP3 比特率'}
+          hint={!settings.usesBitrate ? '当前格式不使用此参数' : undefined}
+        >
           <select
             value={bitrate}
             onChange={(e) => setBitrate(e.target.value)}
-            disabled={task.busy || format === 'wav'}
+            disabled={task.busy || !settings.usesBitrate}
           >
             <option value="128">128 kbps · 较小</option>
             <option value="192">192 kbps · 推荐</option>
@@ -868,7 +907,7 @@ export function ExtractAudioTool() {
       <div className="button-row">
         <ActionButton onClick={() => void process()} busy={task.busy} disabled={!file}>
           <Music2 size={17} />
-          提取音频
+          {convert ? '开始转换' : '提取音频'}
         </ActionButton>
         {task.busy && (
           <button className="button button-secondary" onClick={() => controller.current?.abort()}>

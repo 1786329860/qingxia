@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   ArrowDown,
   ArrowRight,
@@ -19,6 +19,14 @@ import { useFavorites, useRecentTools } from '../lib/preferences';
 
 const BreathingBox = lazy(() => import('./BreathingBox'));
 
+const GALLERY_SUITES = [
+  { num: '01.', en: 'IMAGE', zh: '图片工具', cat: 'image' },
+  { num: '02.', en: 'DOCUMENT', zh: 'PDF 工具', cat: 'pdf' },
+  { num: '03.', en: 'TEXT', zh: '文本编码', cat: 'text' },
+  { num: '04.', en: 'MEDIA', zh: '视频音频', cat: 'media' },
+  { num: '05.', en: 'DEVELOPER', zh: '开发工具', cat: 'dev' },
+];
+
 function ToolCard({
   tool,
   index,
@@ -29,16 +37,49 @@ function ToolCard({
   onFavorite: (message: string) => void;
 }) {
   const { isFavorite, toggleFavorite } = useFavorites();
+  const cardRef = useRef<HTMLElement>(null);
   const Icon = tool.icon;
+  const serial = (index + 1).toString().padStart(2, '0');
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== 'mouse' || matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return;
+    const node = cardRef.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const rx = ((y - rect.height / 2) / (rect.height / 2)) * -2.4;
+    const ry = ((x - rect.width / 2) / (rect.width / 2)) * 2.4;
+    node.style.setProperty('--spot-x', `${x.toFixed(1)}px`);
+    node.style.setProperty('--spot-y', `${y.toFixed(1)}px`);
+    node.style.setProperty('--tilt-x', `${rx.toFixed(2)}deg`);
+    node.style.setProperty('--tilt-y', `${ry.toFixed(2)}deg`);
+  };
+
+  const handlePointerLeave = () => {
+    const node = cardRef.current;
+    if (!node) return;
+    node.style.setProperty('--tilt-x', '0deg');
+    node.style.setProperty('--tilt-y', '0deg');
+  };
+
   return (
     <article
-      className={`tool-card category-${tool.category} ${isFavorite(tool.id) ? 'is-saved' : ''}`}
+      ref={cardRef}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      className={`tool-card porcelain-shard-card category-${tool.category} ${isFavorite(tool.id) ? 'is-saved' : ''} ${tool.featured ? 'is-featured' : ''}`}
       style={{ '--card-index': Math.min(index, 12) } as React.CSSProperties}
     >
+      <div className="tool-card-glow" aria-hidden="true" />
       <Link to={`/tool/${tool.id}`} className="tool-card-link">
         <div className="tool-card-head">
           <span className="tool-icon">
-            <Icon size={22} strokeWidth={1.7} />
+            <Icon size={20} strokeWidth={1.6} />
+          </span>
+          <span className="tool-serial" aria-hidden="true">
+            {serial}
           </span>
           <span className={`tool-mode ${tool.mode === 'link' ? 'tool-mode-link' : ''}`}>
             {tool.mode === 'link' ? (
@@ -61,7 +102,7 @@ function ToolCard({
             {categories.find((category) => category.id === tool.category)?.label || '实用工具'}
           </span>
           <span className="card-open">
-            开始使用
+            打开工具
             <ArrowUpRight size={14} />
           </span>
         </div>
@@ -83,6 +124,7 @@ function ToolCard({
 
 export default function Home() {
   const [params, setParams] = useSearchParams();
+  const { hash, key: locationKey } = useLocation();
   const category = params.get('category') || 'all';
   const view = params.get('view') || 'all';
   const [search, setSearch] = useState('');
@@ -100,16 +142,15 @@ export default function Home() {
   const { favorites } = useFavorites();
   const { recent, clearRecent } = useRecentTools();
   const isSpecialView = view === 'favorites' || view === 'recent';
+
   useEffect(() => {
     const focus = () => searchRef.current?.focus();
     const keyDown = (event: KeyboardEvent) => {
+      if (event.isComposing || event.defaultPrevented) return;
       const target = event.target as HTMLElement;
       const editing =
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
-      if (
-        (event.key === '/' && !editing) ||
-        ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k')
-      ) {
+      if (event.key === '/' && !editing) {
         event.preventDefault();
         focus();
       }
@@ -123,6 +164,7 @@ export default function Home() {
       window.removeEventListener('qingxia:focus-search', focus);
     };
   }, [params]);
+
   const availableCategories = categories.filter((item) =>
     tools.some((tool) => tool.category === item.id),
   );
@@ -146,6 +188,7 @@ export default function Home() {
     if (sort === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
     return list;
   }, [category, favorites, recent, search, sort, view]);
+
   const setCategory = (id: string) => {
     const next = new URLSearchParams(params);
     if (id === 'all') next.delete('category');
@@ -159,27 +202,35 @@ export default function Home() {
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
       block: 'start',
     });
+
+  useEffect(() => {
+    if (hash !== '#tool-collection') return;
+    const frame = requestAnimationFrame(revealTools);
+    return () => cancelAnimationFrame(frame);
+  }, [hash, locationKey]);
+
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const animation = gridRef.current?.animate(
       [
-        { opacity: 0.72, transform: 'translateY(5px)' },
+        { opacity: 0.72, transform: 'translateY(8px)' },
         { opacity: 1, transform: 'none' },
       ],
-      { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)' },
+      { duration: 280, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
     );
     return () => animation?.cancel();
   }, [category, view, sort]);
+
   const searchBox = (
-    <div className="search-container">
-      <Search size={20} />
+    <div className="search-container porcelain-search-bar">
+      <Search size={18} />
       <input
         ref={searchRef}
         aria-label="搜索工具"
         onKeyDown={(event) => {
-          if (event.key === 'Enter') revealTools();
+          if (event.key === 'Enter' && !event.nativeEvent.isComposing) revealTools();
         }}
-        placeholder="想做点什么？搜索工具、功能或关键词…"
+        placeholder="搜索工具，如 PDF、图片压缩"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
@@ -192,49 +243,98 @@ export default function Home() {
       )}
     </div>
   );
+
   return (
-    <div className="home-page">
+    <div className="home-page porcelain-home">
       {!isSpecialView && (
-        <section className="hero-section">
-          <div className="hero-copy">
-            <h1>
-              把日常小事，
-              <br />
-              <span>轻轻解决。</span>
-            </h1>
-            <p className="hero-description">
-              给文件一个去处，给灵感一点空间。
-              <br />
-              在你的浏览器里，把繁琐变轻巧。
-            </p>
-            {searchBox}
-            <div className="hero-features">
-              <span>
-                <Check size={13} />
-                完全免费
-              </span>
-              <span>
-                <Check size={13} />
-                免费账号
-              </span>
-              <span>
-                <Check size={13} />
-                隐私优先
-              </span>
+        <section className="hero-section spatial-gallery-stage" data-hero>
+          {/* Left Floating Frosted Ceramic Tablet (Exact Scheme C Composition) */}
+          <div className="hero-copy porcelain-tablet-left">
+            <div className="tablet-header">
+              <span>CREATIVE TOOLS</span>
+              <small>常用分类</small>
             </div>
-            <button className="hero-explore" onClick={revealTools}>
-              探索你的工具箱 <ArrowDown size={15} />
-            </button>
+            <ul className="porcelain-suite-list" aria-label="常用工具分类">
+              {GALLERY_SUITES.map((suite) => (
+                <li key={suite.num}>
+                  <button
+                    type="button"
+                    className={`suite-row ${category === suite.cat ? 'is-active' : ''}`}
+                    aria-label={suite.zh}
+                    aria-pressed={category === suite.cat}
+                    onClick={() => {
+                      setCategory(suite.cat);
+                      revealTools();
+                    }}
+                  >
+                    <span className="suite-num">{suite.num}</span>
+                    <span className="suite-en">{suite.en}</span>
+                    <span className="suite-zh">{suite.zh}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="porcelain-hero-headline">
+              <h1>
+                把日常小事，
+                <br />
+                <span>轻轻解决。</span>
+              </h1>
+              <p className="hero-description">图片、文档和影音处理，常用工具都在这里。</p>
+            </div>
+            {searchBox}
+            <div className="tablet-footer">
+              <button className="hero-explore" onClick={revealTools}>
+                浏览全部工具 <ArrowDown size={14} />
+              </button>
+              <span className="tablet-serial">01</span>
+            </div>
           </div>
-          <div className="scene-slot">
+
+          {/* Centerpiece: 3D Organic Liquid Porcelain & Water-Droplet Sculpture */}
+          <div className="scene-slot porcelain-centerpiece-slot">
             <Suspense fallback={<div className="scene-loading" aria-hidden="true" />}>
               <BreathingBox />
             </Suspense>
             <div className="scene-caption" aria-hidden="true">
-              <span>为琐事留白</span>
-              <span>为灵感留光</span>
+              <span>QINGXIA / 轻匣</span>
+              <span>白瓷浮光</span>
             </div>
           </div>
+
+          {/* Right Floating Creased Washi Paper Card (Exact Scheme C Composition) */}
+          <aside className="washi-reflection-card" aria-label="关于轻匣">
+            <span className="washi-folded-corner" aria-hidden="true" />
+            <div className="washi-header">
+              <span>轻匣便笺</span>
+              <em>Notes</em>
+            </div>
+            <p className="washi-poem-cn">
+              随手办好一件小事，
+              <br />
+              把时间留给更重要的事。
+            </p>
+            <p className="washi-note">登录后免费使用工具，也可以写张贺卡，约好时间发出。</p>
+            <div className="hero-features washi-tags">
+              <span>
+                <Check size={12} /> 本地文件处理
+              </span>
+              <span>
+                <Check size={12} /> 免费无广告
+              </span>
+            </div>
+            <div className="washi-actions">
+              <Link to="/reminders" className="washi-link">
+                纪念日提醒 <ArrowUpRight size={13} />
+              </Link>
+              <Link to="/account" className="washi-link">
+                轻匣账号 <ArrowUpRight size={13} />
+              </Link>
+            </div>
+            <span className="washi-serial" aria-hidden="true">
+              05
+            </span>
+          </aside>
         </section>
       )}
       {isSpecialView && (
@@ -243,11 +343,9 @@ export default function Home() {
             {view === 'favorites' ? <Heart size={28} /> : <History size={28} />}
           </div>
           <div>
-            <h1>{view === 'favorites' ? '随手收藏，随时好用。' : '上次的顺手，这次继续。'}</h1>
+            <h1>{view === 'favorites' ? '我的收藏' : '最近使用'}</h1>
             <p>
-              {view === 'favorites'
-                ? '把常用工具留在这里，下次少找一步。'
-                : '最近打开的工具，已经为你整理好了。'}
+              {view === 'favorites' ? '常用工具都收在这里。' : '从上次打开的工具继续。'}
               记录仅保存在当前浏览器。
             </p>
           </div>
@@ -256,18 +354,21 @@ export default function Home() {
       <section className="tool-collection" id="tool-collection" aria-label="工具列表">
         <div className="collection-topline">
           <div className="collection-heading">
+            <span className="section-kicker" aria-hidden="true">
+              QINGXIA TOOLS
+            </span>
             <h2>
               {view === 'favorites'
-                ? '我的收藏'
+                ? '已收藏'
                 : view === 'recent'
-                  ? '最近使用'
-                  : selectedLabel || '发现好用的工具'}
+                  ? '使用记录'
+                  : selectedLabel || '全部工具'}
               <span>{filtered.length.toString().padStart(2, '0')}</span>
             </h2>
           </div>
           <div className="collection-subtitle">
             <span className="mini-dot" />
-            少一点繁琐，多一点专注
+            按分类浏览，或搜索工具名称
           </div>
         </div>
         {isSpecialView && searchBox}
@@ -279,7 +380,7 @@ export default function Home() {
               onClick={() => setCategory('all')}
             >
               <Box size={14} />
-              全部工具<span>{tools.length}</span>
+              全部<span>{tools.length}</span>
             </button>
             {availableCategories.map((item) => (
               <button
@@ -296,7 +397,7 @@ export default function Home() {
             <span className="sr-only">排序方式</span>
             <select value={sort} onChange={(event) => setSort(event.target.value)}>
               <option value="default">默认排序</option>
-              <option value="name">名称排序</option>
+              <option value="name">按名称排序</option>
             </select>
           </label>
         </div>
@@ -307,7 +408,7 @@ export default function Home() {
               仅存于此浏览器
             </span>
             <button className="text-button" onClick={clearRecent}>
-              清空最近使用
+              清空最近记录
             </button>
           </div>
         )}
@@ -324,23 +425,23 @@ export default function Home() {
             </span>
             <h3>
               {search
-                ? '暂时没有找到这个工具'
+                ? '没有找到匹配的工具'
                 : view === 'favorites'
-                  ? '给喜欢的工具，留一颗心'
+                  ? '还没有收藏工具'
                   : view === 'recent'
-                    ? '你的第一次使用，就从这里开始'
-                    : '这个分类还没有工具'}
+                    ? '还没有使用记录'
+                    : '这个分类暂无工具'}
             </h3>
             <p>
               {search
                 ? '试试更短的关键词，例如「图片」「PDF」或「转换」。'
                 : view === 'favorites'
-                  ? '点击工具卡片上的爱心，就能在这里快速找到它。'
-                  : '轻巧的工具，等你探索。'}
+                  ? '点击工具卡片上的爱心，即可收藏。'
+                  : '可以切换分类，看看其他工具。'}
             </p>
             {isSpecialView && (
               <Link className="button button-secondary" to="/">
-                发现全部工具
+                浏览全部工具
                 <ArrowRight size={15} />
               </Link>
             )}
@@ -352,11 +453,11 @@ export default function Home() {
           <ShieldCheck size={25} />
         </span>
         <div>
-          <h3>你的文件，只属于你。</h3>
-          <p>本地工具在浏览器内完成处理。文件不上传，隐私不打折。</p>
+          <h3>你的文件，留在自己的设备上</h3>
+          <p>图片、PDF、音视频等本地工具在浏览器内处理，文件与输入内容不会上传。</p>
         </div>
         <Link to="/privacy">
-          了解隐私承诺
+          查看隐私说明
           <ArrowUpRight size={15} />
         </Link>
         <div className="banner-decoration" aria-hidden="true">
@@ -368,7 +469,7 @@ export default function Home() {
       </div>
       <div className="home-endnote">
         <Sparkles size={13} />
-        <span>不追求面面俱到，只想让每一次使用都恰到好处。</span>
+        <span>为每一个日常，留一点轻松。</span>
       </div>
     </div>
   );

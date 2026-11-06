@@ -34,7 +34,7 @@ test('主视觉按可见性暂停，主题切换保留实例，离开路由后�
     .poll(async () => Number(await scene.getAttribute('data-scene-frames')))
     .toBeGreaterThan(first);
   await scene.evaluate((node) => Object.assign(window, { __originalScene: node }));
-  await page.getByRole('button', { name: '切换浅色模式', exact: true }).click();
+  await page.getByRole('button', { name: '切换深色模式', exact: true }).click();
   expect(
     await scene.evaluate(
       (node) => node === (window as unknown as { __originalScene: Element }).__originalScene,
@@ -42,6 +42,7 @@ test('主视觉按可见性暂停，主题切换保留实例，离开路由后�
   ).toBe(true);
   await page.locator('.tool-card').last().scrollIntoViewIfNeeded();
   await expect(scene).toHaveAttribute('data-scene-state', 'paused');
+  await expect(scene.locator('.caustic-rainbow-halo')).toHaveCSS('animation-play-state', 'paused');
   const paused = Number(await scene.getAttribute('data-scene-frames'));
   await page.waitForTimeout(250);
   expect(Number(await scene.getAttribute('data-scene-frames'))).toBe(paused);
@@ -97,6 +98,7 @@ test('减少动态与低设备预算保留完整静态主视觉及可用搜索',
     await expect(scene).toHaveAttribute('data-scene-state', 'static');
     await expect(scene).toHaveAttribute('data-scene-reason', mode);
     await expect(scene).toBeVisible();
+    await expect(scene.locator('.caustic-rainbow-halo')).toHaveCSS('animation-name', 'none');
     const initialFrame = await scene.getAttribute('data-scene-frames');
     await page.waitForTimeout(200);
     expect(await scene.getAttribute('data-scene-frames')).toBe(initialFrame);
@@ -126,7 +128,7 @@ test('主题切换不会重建等待编码器的工具，取消与后续输出�
     .evaluate((node) => Object.assign(window, { __originalTool: node }));
   await page.getByLabel('输出格式').selectOption('avif');
   await page.getByRole('button', { name: '开始转换', exact: true }).click();
-  await page.getByRole('button', { name: '切换浅色模式', exact: true }).click();
+  await page.getByRole('button', { name: '切换深色模式', exact: true }).click();
   expect(
     await page
       .locator('.image-tool')
@@ -165,8 +167,8 @@ test('390与320触屏布局、键盘导航和主题对比不依赖悬停', async
     await page.getByRole('textbox', { name: '搜索工具', exact: true }).focus();
     await page.keyboard.type('JSON');
     await expect(page.locator('.tool-card')).toHaveCount(2);
-    await page.getByRole('button', { name: '切换浅色模式', exact: true }).tap();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.getByRole('button', { name: '切换深色模式', exact: true }).tap();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );

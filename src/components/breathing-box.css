@@ -1,26 +1,46 @@
 .breathing-scene {
-  --breathing-glass-size: 176px;
-  --breathing-core-size: 64px;
-  --breathing-lid-size: 184px;
+  --breathing-glass-size: 186px;
+  --breathing-core-size: 74px;
+  --breathing-lid-size: 196px;
   --breathing-pointer-x: 0deg;
   --breathing-pointer-y: 0deg;
   --breathing-scroll: 0px;
   --breathing-light-x: 50%;
-  --breathing-edge: rgba(207, 255, 193, 0.4);
-  --breathing-edge-faint: rgba(152, 221, 168, 0.07);
-  --breathing-pane: rgba(141, 199, 163, 0.2);
-  --breathing-pane-deep: rgba(5, 47, 36, 0.34);
-  --breathing-reflection: rgba(229, 255, 217, 0.28);
-  --breathing-core: #bcf789;
+  --breathing-edge: rgba(255, 255, 255, 0.92);
+  --breathing-edge-faint: rgba(145, 134, 120, 0.16);
+  --breathing-pane: rgba(255, 253, 249, 0.76);
+  --breathing-pane-deep: rgba(235, 228, 218, 0.42);
+  --breathing-reflection: rgba(255, 255, 255, 0.98);
+  --breathing-core: #fbf9f5;
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 280px;
+  min-height: 360px;
   pointer-events: none;
   user-select: none;
   contain: layout style;
   isolation: isolate;
 }
+
+.caustic-rainbow-halo {
+  position: absolute;
+  inset: 6% 8%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 32deg at 50% 50%,
+    rgba(255, 198, 178, 0.34),
+    rgba(255, 232, 184, 0.26),
+    rgba(198, 236, 214, 0.3),
+    rgba(192, 222, 255, 0.34),
+    rgba(234, 202, 252, 0.28),
+    rgba(255, 198, 178, 0.34)
+  );
+  filter: blur(34px);
+  opacity: 0.85;
+  transform: scale(1.06) rotate(-8deg);
+  animation: caustic-drift 11s ease-in-out infinite alternate;
+}
+
 .breathing-particles,
 .breathing-camera {
   position: absolute;
@@ -28,12 +48,14 @@
   width: 100%;
   height: 100%;
 }
+
 .breathing-camera {
   display: grid;
   place-items: center;
-  perspective: 900px;
-  perspective-origin: 50% 40%;
+  perspective: 1040px;
+  perspective-origin: 50% 45%;
 }
+
 .breathing-lift,
 .breathing-assembly,
 .breathing-glass,
@@ -41,19 +63,113 @@
 .breathing-lid {
   transform-style: preserve-3d;
 }
+
 .breathing-lift {
   width: var(--breathing-glass-size);
   height: var(--breathing-glass-size);
-  margin-top: -25px;
-  animation: breathing-suspension 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  margin-top: -12px;
+  animation: breathing-suspension 7.8s cubic-bezier(0.42, 0, 0.58, 1) infinite;
 }
+
 .breathing-assembly {
   position: relative;
   width: 100%;
   height: 100%;
-  transform: translateY(var(--breathing-scroll)) rotateX(calc(-24deg + var(--breathing-pointer-y)))
-    rotateY(calc(36deg + var(--breathing-pointer-x))) rotateZ(-5deg);
+  transform: translateY(var(--breathing-scroll)) rotateX(calc(-18deg + var(--breathing-pointer-y)))
+    rotateY(calc(32deg + var(--breathing-pointer-x))) rotateZ(-3deg);
+  transition: transform 90ms linear;
 }
+
+/* Organic Liquid Porcelain Petals & Clear Water Droplets (Scheme C Centerpiece) */
+.porcelain-petal {
+  position: absolute;
+  border-radius: 62% 38% 54% 46% / 48% 60% 40% 52%;
+  background: radial-gradient(
+    circle at 28% 24%,
+    #ffffff 0%,
+    #f8f5ef 44%,
+    #e5dfd5 82%,
+    #d8d0c5 100%
+  );
+  box-shadow:
+    inset 6px 8px 18px rgba(255, 255, 255, 0.98),
+    inset -8px -10px 22px rgba(168, 156, 140, 0.28),
+    0 22px 44px -12px rgba(96, 86, 72, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+}
+
+.porcelain-petal-a {
+  inset: -14px;
+  transform: translateZ(18px) rotateZ(18deg) rotateX(14deg);
+  animation: petal-morph-a 9s ease-in-out infinite alternate;
+}
+
+.porcelain-petal-b {
+  inset: -6px;
+  border-radius: 44% 56% 63% 37% / 58% 42% 58% 42%;
+  background:
+    radial-gradient(circle at 32% 28%, #ffffff 0%, #fcfaf6 48%, #ebe5dc 85%),
+    linear-gradient(135deg, rgba(255, 206, 192, 0.22), rgba(196, 226, 255, 0.22));
+  transform: translateZ(46px) rotateZ(-28deg) rotateY(22deg);
+  animation: petal-morph-b 8.2s ease-in-out infinite alternate;
+}
+
+.porcelain-petal-c {
+  inset: 14px;
+  border-radius: 55% 45% 42% 58% / 46% 54% 46% 54%;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #f7f3ec 56%, #e2dbd0 100%);
+  transform: translateZ(72px) rotateZ(42deg) rotateX(-16deg);
+}
+
+.water-droplet {
+  position: absolute;
+  border-radius: 54% 46% 48% 52% / 52% 54% 46% 48%;
+  background: radial-gradient(
+    circle at 30% 26%,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.45) 26%,
+    rgba(226, 236, 245, 0.24) 64%,
+    rgba(190, 204, 218, 0.48) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 4px 5px 12px rgba(255, 255, 255, 0.98),
+    inset -4px -6px 14px rgba(140, 156, 172, 0.28),
+    0 14px 28px -8px rgba(78, 70, 58, 0.2);
+}
+
+.water-droplet-1 {
+  width: 64px;
+  height: 72px;
+  top: -18px;
+  right: -12px;
+  transform: translateZ(94px) rotateZ(16deg);
+}
+
+.water-droplet-2 {
+  width: 56px;
+  height: 52px;
+  bottom: -10px;
+  left: -16px;
+  transform: translateZ(86px) rotateZ(-22deg);
+}
+
+.water-droplet-3 {
+  width: 42px;
+  height: 46px;
+  top: 24px;
+  left: -22px;
+  transform: translateZ(64px) rotateZ(12deg);
+}
+
+.water-droplet-4 {
+  width: 48px;
+  height: 54px;
+  bottom: 4px;
+  right: -18px;
+  transform: translateZ(78px) rotateZ(-14deg);
+}
+
 .breathing-glass,
 .breathing-core,
 .breathing-lid {
@@ -61,6 +177,7 @@
   width: var(--breathing-glass-size);
   height: var(--breathing-glass-size);
 }
+
 .breathing-glass-face,
 .breathing-core-face,
 .breathing-lid-face {
@@ -68,262 +185,263 @@
   inset: 0;
   display: block;
   backface-visibility: visible;
+  border-radius: 36px;
 }
+
 .breathing-glass-face {
   border: 1px solid var(--breathing-edge);
-  background: linear-gradient(152deg, var(--breathing-pane), var(--breathing-pane-deep));
-  box-shadow: inset 0 1px 0 rgba(227, 255, 215, 0.16);
+  background: linear-gradient(
+    148deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(248, 244, 236, 0.32) 48%,
+    rgba(232, 224, 212, 0.24) 100%
+  );
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 28px rgba(255, 242, 230, 0.35);
 }
+
 .breathing-glass .breathing-face-front {
   transform: translateZ(calc(var(--breathing-glass-size) / 2));
 }
 .breathing-glass .breathing-face-back {
   transform: rotateY(180deg) translateZ(calc(var(--breathing-glass-size) / 2));
   border-color: var(--breathing-edge-faint);
-  background: transparent;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.45), transparent 72%);
 }
 .breathing-glass .breathing-face-right {
   transform: rotateY(90deg) translateZ(calc(var(--breathing-glass-size) / 2));
-  background: linear-gradient(105deg, var(--breathing-pane-deep), var(--breathing-pane));
+  background: linear-gradient(110deg, var(--breathing-pane-deep), var(--breathing-pane));
 }
 .breathing-glass .breathing-face-left {
   transform: rotateY(-90deg) translateZ(calc(var(--breathing-glass-size) / 2));
   border-color: var(--breathing-edge-faint);
-  background: transparent;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.4), transparent);
 }
 .breathing-glass .breathing-face-top {
   transform: rotateX(90deg) translateZ(calc(var(--breathing-glass-size) / 2));
-  background: linear-gradient(135deg, rgba(218, 255, 174, 0.18), rgba(88, 167, 129, 0.035) 60%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.88),
+    rgba(255, 218, 204, 0.24) 55%,
+    rgba(204, 228, 255, 0.28)
+  );
 }
 .breathing-glass .breathing-face-bottom {
   transform: rotateX(-90deg) translateZ(calc(var(--breathing-glass-size) / 2));
-  background: rgba(87, 167, 125, 0.13);
+  background: radial-gradient(circle, rgba(224, 214, 200, 0.45), rgba(188, 176, 160, 0.14));
 }
-.breathing-glass .breathing-face-front::before,
-.breathing-glass .breathing-face-right::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at var(--breathing-light-x) 0%,
-    var(--breathing-reflection),
-    transparent 75%
-  );
-  opacity: 0.8;
-}
-.breathing-glass .breathing-face-front::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    var(--breathing-reflection),
-    transparent 38%,
-    transparent 70%,
-    var(--breathing-pane) 100%
-  );
-  pointer-events: none;
-}
-.breathing-glass .breathing-face-right::before {
-  opacity: 0.3;
-}
+
 .breathing-etch {
   position: absolute;
   display: flex;
   gap: 4px;
-  left: 16px;
-  bottom: 16px;
+  left: 20px;
+  bottom: 20px;
 }
 .breathing-etch i {
   display: block;
   width: 2px;
-  height: 11px;
-  background: var(--breathing-edge);
-  opacity: 0.45;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(96, 86, 74, 0.35);
 }
 .breathing-etch i:nth-child(2) {
-  height: 17px;
+  height: 18px;
   margin-top: -6px;
+  background: rgba(96, 86, 74, 0.65);
 }
+
 .breathing-core {
   width: var(--breathing-core-size);
   height: var(--breathing-core-size);
   left: calc((var(--breathing-glass-size) - var(--breathing-core-size)) / 2);
-  top: calc((var(--breathing-glass-size) - var(--breathing-core-size)) / 2 + 8px);
+  top: calc((var(--breathing-glass-size) - var(--breathing-core-size)) / 2);
+  animation: breathing-core-pulse 5.4s ease-in-out infinite;
 }
+
 .breathing-core-face {
-  border: 1px solid rgba(229, 255, 201, 0.3);
-  background: rgba(185, 249, 125, 0.65);
-  backface-visibility: hidden;
-  box-shadow: inset 0 0 26px rgba(225, 255, 166, 0.17);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: radial-gradient(
+    circle at 30% 30%,
+    #ffffff 0%,
+    #fbf8f3 45%,
+    #f2e6de 75%,
+    #e2ebf5 100%
+  );
+  box-shadow:
+    inset 0 0 22px rgba(255, 255, 255, 0.95),
+    0 12px 32px rgba(120, 106, 90, 0.18);
 }
+
 .breathing-core .breathing-face-front {
   transform: translateZ(calc(var(--breathing-core-size) / 2));
-  background: rgba(177, 243, 112, 0.74);
 }
 .breathing-core .breathing-face-back {
   transform: rotateY(180deg) translateZ(calc(var(--breathing-core-size) / 2));
 }
 .breathing-core .breathing-face-right {
   transform: rotateY(90deg) translateZ(calc(var(--breathing-core-size) / 2));
-  background: rgba(118, 202, 134, 0.58);
 }
 .breathing-core .breathing-face-left {
   transform: rotateY(-90deg) translateZ(calc(var(--breathing-core-size) / 2));
 }
 .breathing-core .breathing-face-top {
   transform: rotateX(90deg) translateZ(calc(var(--breathing-core-size) / 2));
-  background: rgba(215, 255, 169, 0.88);
 }
 .breathing-core .breathing-face-bottom {
   transform: rotateX(-90deg) translateZ(calc(var(--breathing-core-size) / 2));
 }
+
 .breathing-lid {
   width: var(--breathing-lid-size);
   height: 8px;
   left: calc((var(--breathing-glass-size) - var(--breathing-lid-size)) / 2);
   top: -18px;
+  animation: breathing-lid-float 7.8s cubic-bezier(0.42, 0, 0.58, 1) infinite;
 }
+
 .breathing-lid-face {
-  border: 1px solid var(--breathing-edge);
-  background: rgba(184, 245, 157, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.55);
 }
-.breathing-lid .breathing-face-front {
-  transform: translateZ(calc(var(--breathing-lid-size) / 2));
-}
-.breathing-lid .breathing-face-back {
-  transform: rotateY(180deg) translateZ(calc(var(--breathing-lid-size) / 2));
-}
-.breathing-lid .breathing-face-right {
-  transform: rotateY(90deg) translateZ(calc(var(--breathing-lid-size) / 2));
-}
-.breathing-lid .breathing-face-left {
-  transform: rotateY(-90deg) translateZ(calc(var(--breathing-lid-size) / 2));
-}
-.breathing-lid .breathing-face-top,
-.breathing-lid .breathing-face-bottom {
-  height: var(--breathing-lid-size);
-  top: calc((8px - var(--breathing-lid-size)) / 2);
-  background: linear-gradient(
-    135deg,
-    rgba(230, 255, 191, 0.21),
-    rgba(97, 171, 137, 0.06) 60%,
-    rgba(211, 255, 168, 0.1)
-  );
-}
-.breathing-lid .breathing-face-top {
-  transform: rotateX(90deg) translateZ(4px);
-}
-.breathing-lid .breathing-face-bottom {
-  transform: rotateX(-90deg) translateZ(4px);
-}
+
 .breathing-floor {
   position: absolute;
-  left: 24%;
-  right: 18%;
-  height: 20%;
-  top: 67%;
+  left: 16%;
+  right: 16%;
+  height: 26%;
+  top: 68%;
   border-radius: 50%;
   background: radial-gradient(
     ellipse,
-    rgba(141, 216, 122, 0.12),
-    rgba(29, 66, 41, 0.045) 45%,
-    transparent 72%
+    rgba(136, 122, 106, 0.18) 0%,
+    rgba(255, 204, 188, 0.16) 38%,
+    rgba(196, 224, 255, 0.14) 58%,
+    transparent 76%
   );
-  transform: rotate(-7deg);
+  transform: rotate(-4deg);
+  filter: blur(12px);
 }
+
 .breathing-orbit {
   position: absolute;
   left: 50%;
-  top: 48%;
-  width: 77%;
-  height: 27%;
+  top: 49%;
+  width: 78%;
+  height: 28%;
   border: 1px solid var(--breathing-edge-faint);
   border-radius: 50%;
-  transform: translate(-50%, -50%) rotate(-11deg);
+  transform: translate(-50%, -50%) rotate(-9deg);
 }
+
 .breathing-orbit-far {
   border-bottom-color: transparent;
-  opacity: 0.42;
-  width: 86%;
-  height: 31%;
+  opacity: 0.5;
+  width: 88%;
+  height: 34%;
 }
+
+.breathing-orbit-mid {
+  border-style: dashed;
+  border-color: rgba(145, 134, 120, 0.18);
+  width: 68%;
+  height: 24%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(5deg);
+}
+
 .breathing-orbit-near {
   border-top-color: transparent;
   border-left-color: transparent;
-  opacity: 0.6;
+  border-right-color: rgba(145, 134, 120, 0.26);
+  opacity: 0.65;
   top: 54%;
-  transform: translate(-50%, -50%) rotate(16deg);
+  transform: translate(-50%, -50%) rotate(15deg);
 }
+
 .breathing-coordinate {
   position: absolute;
   display: flex;
-  gap: 5px;
-  opacity: 0.35;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.55;
 }
+
 .breathing-coordinate-left {
-  left: 13%;
-  top: 26%;
+  left: 6%;
+  top: 16%;
 }
+
 .breathing-coordinate-right {
-  right: 10%;
-  bottom: 24%;
-  transform: rotate(90deg);
+  right: 6%;
+  bottom: 16%;
 }
+
 .breathing-coordinate span {
-  width: 12px;
+  width: 11px;
   height: 1px;
-  background: var(--breathing-edge);
+  background: rgba(112, 102, 90, 0.45);
 }
+
 .breathing-coordinate span + span {
   width: 1px;
-  height: 12px;
-  margin-left: -11px;
-  margin-top: -5px;
+  height: 11px;
+  margin-left: -14px;
 }
-.breathing-scene:not([data-scene-state='running']) .breathing-lift {
-  animation-play-state: paused;
+
+.breathing-coordinate em {
+  font-style: normal;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--subtle);
+  margin-left: 6px;
 }
-.breathing-scene[data-scene-state='static'] .breathing-lift {
-  animation: none;
+
+:root[data-theme='dark'] .porcelain-petal {
+  background: radial-gradient(circle at 28% 24%, #383b40 0%, #232529 52%, #15171a 100%);
+  box-shadow:
+    inset 4px 6px 16px rgba(255, 255, 255, 0.18),
+    inset -8px -10px 20px rgba(0, 0, 0, 0.55),
+    0 22px 44px -12px rgba(0, 0, 0, 0.65);
+  border-color: rgba(255, 255, 255, 0.16);
 }
-:root[data-theme='light'] .breathing-scene {
-  --breathing-edge: rgba(42, 105, 73, 0.32);
-  --breathing-edge-faint: rgba(53, 119, 82, 0.06);
-  --breathing-pane: rgba(225, 255, 239, 0.64);
-  --breathing-pane-deep: rgba(79, 153, 114, 0.12);
-  --breathing-reflection: rgba(255, 255, 255, 0.88);
+
+:root[data-theme='dark'] .breathing-glass-face {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(148deg, rgba(255, 255, 255, 0.12), rgba(30, 32, 36, 0.45));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-:root[data-theme='light'] .breathing-core-face {
-  border-color: rgba(71, 143, 71, 0.5);
+
+@keyframes caustic-drift {
+  0% {
+    transform: scale(1.02) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1.1) rotate(12deg);
+  }
 }
-:root[data-theme='light'] .breathing-core .breathing-face-top {
-  background: rgba(167, 222, 93, 0.68);
+
+@keyframes petal-morph-a {
+  0% {
+    border-radius: 62% 38% 54% 46% / 48% 60% 40% 52%;
+  }
+  100% {
+    border-radius: 48% 52% 62% 38% / 58% 44% 56% 42%;
+  }
 }
-:root[data-theme='light'] .breathing-core .breathing-face-front {
-  background: rgba(154, 211, 104, 0.7);
+
+@keyframes petal-morph-b {
+  0% {
+    border-radius: 44% 56% 63% 37% / 58% 42% 58% 42%;
+  }
+  100% {
+    border-radius: 58% 42% 46% 54% / 44% 58% 42% 56%;
+  }
 }
-:root[data-theme='light'] .breathing-core .breathing-face-right {
-  background: rgba(79, 167, 120, 0.62);
-}
-:root[data-theme='light'] .breathing-glass .breathing-face-top {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(183, 230, 199, 0.12));
-}
-:root[data-theme='light'] .breathing-lid-face {
-  background: rgba(208, 247, 222, 0.35);
-}
-:root[data-theme='light'] .breathing-lid .breathing-face-top,
-:root[data-theme='light'] .breathing-lid .breathing-face-bottom {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(210, 244, 223, 0.22) 65%);
-}
-:root[data-theme='light'] .breathing-floor {
-  background: radial-gradient(
-    ellipse,
-    rgba(51, 111, 72, 0.15),
-    rgba(76, 129, 88, 0.025) 48%,
-    transparent 72%
-  );
-}
+
 @keyframes breathing-suspension {
   0%,
   100% {
@@ -333,34 +451,42 @@
     transform: translateY(-12px);
   }
 }
-@media (max-width: 640px) {
-  .breathing-scene {
-    --breathing-glass-size: 128px;
-    --breathing-core-size: 46px;
-    --breathing-lid-size: 134px;
-    min-height: 240px;
+
+@keyframes breathing-lid-float {
+  0%,
+  100% {
+    transform: translateY(0);
   }
-  .breathing-camera {
-    perspective: 700px;
-  }
-  .breathing-lift {
-    margin-top: -5px;
-  }
-  .breathing-lid {
-    top: -14px;
-  }
-  .breathing-orbit-far {
-    width: 92%;
-  }
-  .breathing-coordinate-left {
-    left: 7%;
-  }
-  .breathing-coordinate-right {
-    right: 5%;
+  50% {
+    transform: translateY(-5px);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .breathing-lift {
-    animation: none !important;
+
+@keyframes breathing-core-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
   }
+  50% {
+    filter: brightness(1.06);
+  }
+}
+
+@media (max-width: 640px) {
+  .breathing-scene {
+    --breathing-glass-size: 140px;
+    --breathing-core-size: 54px;
+    --breathing-lid-size: 148px;
+    min-height: 260px;
+  }
+}
+
+.breathing-scene[data-scene-state='paused']
+  :is(.breathing-lift, .breathing-core, .breathing-lid, .caustic-rainbow-halo, .porcelain-petal) {
+  animation-play-state: paused;
+}
+
+.breathing-scene[data-scene-state='static']
+  :is(.breathing-lift, .breathing-core, .breathing-lid, .caustic-rainbow-halo, .porcelain-petal) {
+  animation: none;
 }

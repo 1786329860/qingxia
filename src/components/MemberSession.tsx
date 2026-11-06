@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Link, useLocation } from 'react-router-dom';
-import { LockKeyhole } from 'lucide-react';
+import { ArrowRight, Check, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react';
 import { analyticsEnabled } from '../lib/analytics';
 import { memberStorageKey } from '../lib/member-storage';
 
@@ -111,7 +111,10 @@ export function MemberGate({ wall = false }: { wall?: boolean }) {
   const { ready } = useMember();
   return (
     <div className="member-gate">
-      <LockKeyhole size={26} aria-hidden="true" />
+      <div className="member-gate-badge" aria-hidden="true">
+        <LockKeyhole size={24} />
+        <span>轻匣账号</span>
+      </div>
       <div>
         <h2>{wall ? '登录后写一张便利贴' : '登录后使用这个工具'}</h2>
         <p>
@@ -119,6 +122,17 @@ export function MemberGate({ wall = false }: { wall?: boolean }) {
             ? '轻匣用户可以阅读、发布留言和查看站长回复。'
             : '注册和工具使用始终免费，本地文件依然留在你的浏览器。'}
         </p>
+        <div className="member-gate-perks">
+          <span>
+            <Check size={13} aria-hidden="true" /> 免费使用
+          </span>
+          <span>
+            <ShieldCheck size={13} aria-hidden="true" /> 文件处理在本地
+          </span>
+          <span>
+            <Sparkles size={13} aria-hidden="true" /> 无广告
+          </span>
+        </div>
       </div>
       {ready || typeof window === 'undefined' ? (
         <Link
@@ -126,6 +140,7 @@ export function MemberGate({ wall = false }: { wall?: boolean }) {
           to={'/account?next=' + encodeURIComponent(pathname)}
         >
           登录 / 注册
+          <ArrowRight size={15} aria-hidden="true" />
         </Link>
       ) : (
         <p role="status">正在检查登录状态…</p>

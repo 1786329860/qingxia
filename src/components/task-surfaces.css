@@ -1,26 +1,33 @@
 .tool-panel {
-  --task-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --task-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 .tool-panel .dropzone {
-  min-height: 230px;
-  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--line-strong));
-  border-radius: 16px;
-  background: var(--bg);
+  min-height: 244px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 38%, var(--line-strong));
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 0%, var(--accent-dim), transparent 68%),
+    color-mix(in srgb, var(--bg) 82%, var(--surface));
   isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent),
+    0 12px 32px -12px rgba(0, 0, 0, 0.22);
   transition:
-    border-color 240ms var(--task-ease),
-    background-color 240ms var(--task-ease);
+    border-color 280ms var(--task-ease),
+    background-color 280ms var(--task-ease),
+    transform 280ms var(--task-ease),
+    box-shadow 280ms var(--task-ease);
 }
 .tool-panel .dropzone::before {
   content: '';
   position: absolute;
-  inset: 7px;
+  inset: 9px;
   border: 1px solid var(--line);
-  border-radius: 11px;
+  border-radius: 14px;
   pointer-events: none;
   transition:
-    border-color 240ms var(--task-ease),
-    inset 240ms var(--task-ease);
+    border-color 280ms var(--task-ease),
+    inset 280ms var(--task-ease);
 }
 .tool-panel .dropzone:focus-within {
   outline: 2px solid var(--accent);
@@ -29,46 +36,63 @@
 .tool-panel .dropzone:hover,
 .tool-panel .dropzone.is-dragging {
   border-color: var(--accent);
-  background: var(--accent-dim);
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 72%
+    ),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent) 25%, transparent),
+    0 20px 44px -16px rgba(0, 0, 0, 0.32);
 }
 .tool-panel .dropzone.is-dragging::before {
-  inset: 12px;
+  inset: 14px;
   border-color: var(--accent-border);
 }
 .tool-panel .dropzone-button {
   position: relative;
   z-index: 1;
-  min-height: 230px;
-  padding: 30px 24px;
-  gap: 12px;
+  min-height: 244px;
+  padding: 34px 24px;
+  gap: 13px;
   border-radius: inherit;
   outline: none;
 }
 .tool-panel .dropzone-button strong {
   font-size: 16px;
-  font-weight: 550;
-  line-height: 1.7;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.65;
 }
 .tool-panel .dropzone-button > span:last-child {
-  max-width: 50ch;
+  max-width: 52ch;
   font-size: 13px;
   line-height: 1.8;
   color: var(--muted);
 }
 .tool-panel .dropzone-icon {
-  width: 62px;
-  height: 62px;
+  width: 66px;
+  height: 66px;
   margin-bottom: 6px;
-  border-radius: 17px;
+  border-radius: 20px;
   border: 1px solid var(--accent-border);
-  background: var(--surface-raised);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
+  background: linear-gradient(145deg, var(--surface-raised), var(--surface));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text) 12%, transparent),
+    0 10px 24px -6px rgba(0, 0, 0, 0.28);
   transition:
-    transform 240ms var(--task-ease),
-    background-color 240ms var(--task-ease);
+    transform 320ms var(--task-ease),
+    background-color 280ms var(--task-ease),
+    box-shadow 320ms var(--task-ease);
+}
+.tool-panel .dropzone:hover .dropzone-icon {
+  transform: translateY(-4px) scale(1.03);
+  border-color: var(--accent);
 }
 .tool-panel .dropzone.is-dragging .dropzone-icon {
-  transform: translateY(-5px);
+  transform: translateY(-6px) scale(1.06);
   background: var(--accent);
   color: var(--accent-text);
 }
@@ -105,34 +129,51 @@
 }
 .tool-panel .button[aria-busy='true'] {
   cursor: progress;
-  opacity: 0.8;
+  opacity: 0.82;
 }
 .tool-panel .result-box {
-  margin-top: 24px;
-  padding: 24px;
-  background: var(--bg);
+  margin-top: 26px;
+  padding: 26px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-raised) 36%, var(--bg)),
+    var(--bg)
+  );
   border: 1px solid var(--line-strong);
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent),
+    0 14px 34px -14px rgba(0, 0, 0, 0.24);
 }
 .tool-panel .result-box > .result-heading {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0 0 18px;
   color: var(--text);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   line-height: 1.6;
+}
+.tool-panel .result-box > .result-heading::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
 }
 .tool-panel .result-box:focus-within {
   border-color: var(--accent-border);
 }
 .tool-panel .task-progress {
-  padding: 18px 20px;
+  padding: 18px 22px;
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--bg);
   color: var(--text);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
 }
 .tool-panel .task-progress > div:first-child {
   gap: 16px;
@@ -145,14 +186,14 @@
   font-variant-numeric: tabular-nums;
 }
 .tool-panel .progress-track {
-  height: 4px;
+  height: 6px;
   background: var(--line-strong);
-  border-radius: 2px;
+  border-radius: 999px;
 }
 .tool-panel .progress-track > span {
   width: 100%;
   height: 100%;
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-cyan));
   border-radius: inherit;
   transform-origin: left;
   transition: transform 180ms var(--task-ease);
@@ -193,6 +234,7 @@
   .tool-panel .progress-track > span {
     transition: none;
   }
+  .tool-panel .dropzone:hover .dropzone-icon,
   .tool-panel .dropzone.is-dragging .dropzone-icon {
     transform: none;
   }

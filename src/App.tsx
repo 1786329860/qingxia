@@ -14,10 +14,11 @@ import SiteShell from './components/SiteShell';
 import Home from './components/Home';
 import { MemberGate, MemberSession, useMember } from './components/MemberSession';
 import './pages/community.css';
-import { getTool, categories } from './lib/registry';
+import { getTool, categories, tools } from './lib/registry';
 import { useFavorites, rememberTool } from './lib/preferences';
 import { trackPageView } from './lib/analytics';
 import { getPageSeo, updateDocumentSeo } from './lib/seo';
+
 const Admin = lazy(() => import('./pages/Admin'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const About = lazy(() => import('./pages/About'));
@@ -25,6 +26,7 @@ const Account = lazy(() => import('./pages/Account'));
 const Reminders = lazy(() => import('./pages/Reminders'));
 const Wall = lazy(() => import('./pages/Community').then((m) => ({ default: m.Wall })));
 const Gallery = lazy(() => import('./pages/Community').then((m) => ({ default: m.Gallery })));
+
 const pages: Record<string, ReturnType<typeof lazy>> = {
   'image-compress': lazy(() =>
     import('./tools/images').then((m) => ({ default: m.ImageCompressTool })),
@@ -67,6 +69,7 @@ const pages: Record<string, ReturnType<typeof lazy>> = {
   ),
   kaomoji: lazy(() => import('./tools/fun-display').then((m) => ({ default: m.KaomojiTool }))),
 };
+
 function Loading() {
   return (
     <div className="page-loading" role="status">
@@ -75,6 +78,7 @@ function Loading() {
     </div>
   );
 }
+
 class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -96,6 +100,7 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
     );
   }
 }
+
 function ToolRoute() {
   const { id = '' } = useParams();
   const tool = getTool(id);
@@ -108,8 +113,10 @@ function ToolRoute() {
   const View = pages[id];
   const Icon = tool.icon;
   const category = categories.find((c) => c.id === tool.category);
+  const siblings = tools.filter((t) => t.category === tool.category);
+
   return (
-    <>
+    <div className="tool-studio-wrap">
       <div className="tool-breadcrumb">
         <Link to="/">工具箱</Link>
         <span>/</span>
@@ -122,6 +129,7 @@ function ToolRoute() {
           <Icon size={29} />
         </div>
         <div>
+          <span className="eyebrow">{category?.label}</span>
           <h1>{tool.name}</h1>
           <p>{tool.description}</p>
         </div>
@@ -133,6 +141,24 @@ function ToolRoute() {
           <Star size={20} fill={isFavorite(id) ? 'currentColor' : 'none'} />
         </button>
       </header>
+      {siblings.length > 1 && (
+        <nav className="tool-sibling-ribbon" aria-label="同类工具">
+          {siblings.map((sibling) => {
+            const SiblingIcon = sibling.icon;
+            return (
+              <Link
+                key={sibling.id}
+                to={`/tool/${sibling.id}`}
+                aria-current={sibling.id === tool.id ? 'page' : undefined}
+                className={`sibling-pill ${sibling.id === tool.id ? 'is-current' : ''}`}
+              >
+                <SiblingIcon size={13} />
+                <span>{sibling.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
       <div className={`tool-privacy-bar ${tool.mode === 'link' ? 'is-link' : ''}`}>
         {tool.mode === 'local' ? <ShieldCheck size={17} /> : <LockKeyhole size={17} />}
         <strong>
@@ -159,9 +185,10 @@ function ToolRoute() {
           <ArrowUpRight size={13} />
         </Link>
       </div>
-    </>
+    </div>
   );
 }
+
 function NotFound() {
   return (
     <div className="empty-state">
@@ -175,6 +202,7 @@ function NotFound() {
     </div>
   );
 }
+
 function RouteEffects() {
   const { pathname, search } = useLocation();
   useEffect(() => updateDocumentSeo(getPageSeo(pathname, search)), [pathname, search]);
@@ -185,6 +213,7 @@ function RouteEffects() {
   }, [pathname]);
   return null;
 }
+
 export default function App() {
   return (
     <MemberSession>

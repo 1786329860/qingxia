@@ -165,7 +165,7 @@ test('Wake Lock生命周期在退出全屏和离开路由时释放', async ({ pa
     .toBe(2);
 });
 
-test('六个新工具在320和390像素无横向溢出，支持浅色主题', async ({ page }) => {
+test('六个新工具在320和390像素无横向溢出，支持深浅主题', async ({ page }) => {
   test.setTimeout(90000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const width of [320, 390]) {
@@ -178,8 +178,8 @@ test('六个新工具在320和390像素无横向溢出，支持浅色主题', as
       );
     }
   }
-  await page.getByRole('button', { name: '切换浅色模式', exact: true }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: '切换深色模式', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.getByRole('button', { name: '复制开心比耶', exact: true }).focus();
   await expect(page.getByRole('button', { name: '复制开心比耶', exact: true })).toBeFocused();
 });

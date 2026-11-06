@@ -48,6 +48,36 @@ test('首页搜索、收藏与最近使用持久化', async ({ page }) => {
   await page.goto('/?view=recent');
   await expect(page.locator('.tool-card').first()).toContainText('JSON 格式化');
 });
+test('快速搜索键盘操作、弹层焦点和移动导航可用', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await page.goto('/');
+  const dock = page.getByRole('navigation', { name: '常用入口' });
+  const bounds = await dock.boundingBox();
+  expect(bounds).toBeTruthy();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+  const search = page.getByRole('button', { name: '搜索工具', exact: true });
+  const brand = await page.locator('.gallery-brand-center .brand-wordmark').boundingBox();
+  const searchBounds = await search.boundingBox();
+  expect(brand!.x + brand!.width).toBeLessThanOrEqual(searchBounds!.x);
+  await search.click();
+  const dialog = page.getByRole('dialog', { name: '快速搜索工具' });
+  const input = dialog.getByRole('textbox', { name: '快速搜索' });
+  await expect(input).toBeFocused();
+  for (let index = 0; index < 12; index++) await input.press('ArrowDown');
+  await expect(dialog.locator('.command-palette-item').last()).toHaveClass(/is-selected/);
+  await input.press('Escape');
+  await expect(search).toBeFocused();
+  const menu = page.getByRole('button', { name: '打开导航' });
+  await menu.click();
+  await expect(page.getByRole('button', { name: '关闭导航' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeFocused();
+  await search.click();
+  await input.fill('PDF 合并');
+  await input.press('Enter');
+  await expect(page).toHaveURL(/\/tool\/pdf-merge$/);
+});
 test('所有工具路由正常加载且无运行时崩溃', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

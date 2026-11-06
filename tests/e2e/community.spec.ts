@@ -94,7 +94,7 @@ test('找回验证码只用于重设密码，随后回到登录', async ({ page 
   await expect(page.getByRole('link', { name: '登录或注册' })).toBeVisible();
 });
 
-test('320px 和浅色下留言以纯文本展示，发布与仅删除自己的留言可操作', async ({ page, context }) => {
+test('320px 和深色下留言以纯文本展示，发布与仅删除自己的留言可操作', async ({ page, context }) => {
   await mockMember(context);
   await page.setViewportSize({ width: 320, height: 840 });
   let own = false;
@@ -121,7 +121,7 @@ test('320px 和浅色下留言以纯文本展示，发布与仅删除自己的�
     });
   });
   await page.goto('/wall');
-  await page.getByRole('button', { name: '切换浅色模式' }).click();
+  await page.getByRole('button', { name: '切换深色模式' }).click();
   await expect(page.getByText(note.content, { exact: true })).toBeVisible();
   await expect(page.getByText('收到！', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '删除我的留言' })).toHaveCount(0);

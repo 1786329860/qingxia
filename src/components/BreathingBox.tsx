@@ -31,7 +31,7 @@ export default function BreathingBox() {
     let lastFrame = 0;
     let clock = 0;
     let renderedFrames = 0;
-    let lightTheme = document.documentElement.dataset.theme === 'light';
+    let lightTheme = document.documentElement.dataset.theme !== 'dark';
     let performanceFallback = false;
     let frameWindow: number[] = [];
     let pointerX = 0;
@@ -52,36 +52,58 @@ export default function BreathingBox() {
       context.clearRect(0, 0, width, height);
       root.dataset.sceneFrames = String(++renderedFrames);
       const scale = Math.min(width / 500, height / 440);
-      const cx = width * 0.5;
-      const cy = height * 0.47;
-      const color = lightTheme ? '38,102,71' : '187,243,159';
+      const cx = width * 0.5 + currentX * 1.8;
+      const cy = height * 0.48 + currentY * 1.8;
       const stable = root.dataset.sceneState === 'static';
       const progress = stable ? 0 : time;
+
+      // Scheme C: Iridescent Rainbow Caustic Rays Cast on Porcelain Canvas
+      const causticColors = lightTheme
+        ? ['255, 192, 172', '186, 218, 255', '210, 238, 202', '238, 198, 248', '255, 224, 178']
+        : ['225, 210, 190', '148, 196, 225', '168, 218, 198', '212, 182, 225', '235, 205, 168'];
+
+      for (let ray = 0; ray < 5; ray++) {
+        const rayAngle = (ray / 5) * Math.PI * 2 + progress * 0.18;
+        const rx = cx + Math.cos(rayAngle) * 78 * scale;
+        const ry = cy + Math.sin(rayAngle) * 62 * scale;
+        const rad = (118 + (ray % 2) * 28) * scale;
+        const grad = context.createRadialGradient(rx, ry, 4 * scale, rx, ry, Math.max(12, rad));
+        const col = causticColors[ray % causticColors.length];
+        grad.addColorStop(0, `rgba(${col}, ${lightTheme ? 0.24 : 0.14})`);
+        grad.addColorStop(0.55, `rgba(${col}, ${lightTheme ? 0.09 : 0.05})`);
+        grad.addColorStop(1, `rgba(${col}, 0)`);
+        context.fillStyle = grad;
+        context.beginPath();
+        context.arc(rx, ry, Math.max(12, rad), 0, Math.PI * 2);
+        context.fill();
+      }
+
+      // Floating Water-Droplet & Pearl Micro-Caustics
       for (let index = 0; index < settings.particles; index++) {
         const lane = index % 3;
         const angle = (index / settings.particles) * Math.PI * 2 + progress * (0.12 + lane * 0.025);
-        const radius = (150 + lane * 14) * scale;
-        const x = cx + Math.cos(angle) * radius + Math.sin(angle * 2) * 5 * scale + currentX * 2;
+        const radius = (138 + lane * 20) * scale;
+        const x = cx + Math.cos(angle) * radius + Math.sin(angle * 2) * 8 * scale;
         const y =
-          cy +
-          Math.sin(angle) * radius * (0.25 + lane * 0.035) +
-          Math.cos(angle) * 33 * scale +
-          currentY * 2;
+          cy + Math.sin(angle) * radius * (0.36 + lane * 0.05) + Math.cos(angle) * 26 * scale;
         const depth = (Math.sin(angle) + 1) / 2;
-        const opacity = (lightTheme ? 0.23 : 0.24) + depth * 0.48;
-        const size = (index % 8 === 0 ? 2.2 : 0.7 + depth * 0.55) * scale;
+        const size = (index % 5 === 0 ? 4.2 : 1.4 + depth * 1.2) * scale;
+
+        // Water droplet specular fill
         context.beginPath();
-        context.fillStyle = `rgba(${color},${opacity})`;
-        context.arc(x, y, Math.max(0.45, size), 0, Math.PI * 2);
+        context.fillStyle = lightTheme
+          ? `rgba(255, 255, 255, ${0.55 + depth * 0.38})`
+          : `rgba(244, 240, 232, ${0.32 + depth * 0.42})`;
+        context.arc(x, y, Math.max(0.8, size), 0, Math.PI * 2);
         context.fill();
-        if (index % 8 === 0) {
+
+        if (index % 5 === 0) {
           context.beginPath();
-          context.strokeStyle = `rgba(${color},${opacity * 0.2})`;
-          context.lineWidth = 0.65;
-          context.moveTo(x - 5 * scale, y);
-          context.lineTo(x + 5 * scale, y);
-          context.moveTo(x, y - 5 * scale);
-          context.lineTo(x, y + 5 * scale);
+          context.strokeStyle = lightTheme
+            ? `rgba(168, 152, 134, ${0.22 + depth * 0.18})`
+            : `rgba(244, 240, 232, ${0.2 + depth * 0.18})`;
+          context.lineWidth = 0.8;
+          context.arc(x, y, Math.max(1.6, size * 1.45), 0, Math.PI * 2);
           context.stroke();
         }
       }
@@ -112,7 +134,6 @@ export default function BreathingBox() {
         }
         frameWindow = [];
       }
-      // The decoration has a 30fps draw budget; controls remain on the browser's native cadence.
       if (!lastDraw || now - lastDraw >= 1000 / 30) {
         const elapsed = lastDraw ? Math.min(100, now - lastDraw) : 0;
         clock += elapsed / 1000;
@@ -173,12 +194,12 @@ export default function BreathingBox() {
         Math.max(
           -1,
           Math.min(1, (event.clientX - bounds.left - bounds.width / 2) / (bounds.width / 2)),
-        ) * 5;
+        ) * 7;
       pointerY =
         Math.max(
           -1,
           Math.min(1, (event.clientY - bounds.top - bounds.height / 2) / (bounds.height / 2)),
-        ) * -4;
+        ) * -6;
     };
     const leave = () => {
       pointerX = pointerY = 0;
@@ -189,7 +210,7 @@ export default function BreathingBox() {
       scrollProgress = Math.max(0, Math.min(1, -bounds.top / Math.max(1, bounds.height)));
     };
     const theme = new MutationObserver(() => {
-      lightTheme = document.documentElement.dataset.theme === 'light';
+      lightTheme = document.documentElement.dataset.theme !== 'dark';
       if (root.dataset.sceneState !== 'running') draw(clock);
     });
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -234,17 +255,29 @@ export default function BreathingBox() {
   return (
     <div
       ref={element}
-      className="breathing-scene"
+      className="breathing-scene porcelain-sculpture-scene"
       aria-hidden="true"
       data-scene-state="static"
       data-scene-quality="static"
     >
       <div className="breathing-floor" />
+      <div className="caustic-rainbow-halo" />
       <div className="breathing-orbit breathing-orbit-far" />
+      <div className="breathing-orbit breathing-orbit-mid" />
       <canvas className="breathing-particles" ref={canvas} />
       <div className="breathing-camera">
         <div className="breathing-lift">
-          <div className="breathing-assembly">
+          <div className="breathing-assembly porcelain-assembly">
+            {/* Organic Liquid Porcelain & Water-Droplet Sculpture Layers */}
+            <div className="porcelain-petal porcelain-petal-a" />
+            <div className="porcelain-petal porcelain-petal-b" />
+            <div className="porcelain-petal porcelain-petal-c" />
+            <div className="water-droplet water-droplet-1" />
+            <div className="water-droplet water-droplet-2" />
+            <div className="water-droplet water-droplet-3" />
+            <div className="water-droplet water-droplet-4" />
+
+            {/* Inner Sculptural Porcelain Prism Core */}
             <div className="breathing-core">
               {faces.map((face) => (
                 <span key={face} className={`breathing-core-face breathing-face-${face}`} />
@@ -275,10 +308,12 @@ export default function BreathingBox() {
       <div className="breathing-coordinate breathing-coordinate-left">
         <span />
         <span />
+        <em>白瓷</em>
       </div>
       <div className="breathing-coordinate breathing-coordinate-right">
         <span />
         <span />
+        <em>浮光</em>
       </div>
     </div>
   );

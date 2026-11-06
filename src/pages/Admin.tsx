@@ -24,11 +24,14 @@ import {
   Download,
   ShieldCheck,
   FlaskConical,
+  Sparkles,
+  Activity,
 } from 'lucide-react';
 import { tools } from '../lib/registry';
 import { downloadText } from '../lib/files';
 import { Notice } from '../components/ToolUI';
 import './admin-surfaces.css';
+
 interface Counts {
   views: number;
   visitors: number;
@@ -172,9 +175,16 @@ export default function Admin() {
   if (!authenticated && !demo)
     return (
       <div className="admin-gate">
+        <div className="admin-vault-rings" aria-hidden="true">
+          <span />
+          <span />
+        </div>
         <div className="admin-gate-orb" aria-hidden="true">
           <LockKeyhole size={30} />
         </div>
+        <span className="eyebrow" aria-hidden="true">
+          站长专用
+        </span>
         <h1>站长工作台</h1>
         <p>看看轻匣，正在帮到多少人。</p>
         <form onSubmit={login}>
@@ -204,7 +214,7 @@ export default function Admin() {
           <ShieldCheck size={14} />
           <span>独立密码保护 · 仅供站长使用</span>
         </div>
-        <button className="text-button" onClick={preview}>
+        <button className="text-button admin-demo-trigger" onClick={preview}>
           <FlaskConical size={14} />
           预览统计界面（示例数据）
         </button>
@@ -232,6 +242,10 @@ export default function Admin() {
     <div className="admin-page" data-mode={demo ? 'demo' : 'live'} aria-busy={loading}>
       <header className="admin-heading">
         <div>
+          <div className="page-kicker" aria-hidden="true">
+            <Activity size={14} />
+            <span>数据与社区管理</span>
+          </div>
           <h1>
             站长工作台
             <span className={`live-pill ${demo ? 'is-demo' : ''}`}>
@@ -340,12 +354,15 @@ export default function Admin() {
               {typeof value === 'number' ? value.toLocaleString('zh-CN') : value}
             </strong>
             <span className="stat-note">{note}</span>
+            <span className="stat-decoration" aria-hidden="true" />
           </section>
         ))}
       </div>
       {!demo && (
         <section className="member-stats" aria-label="注册与活跃统计">
-          <h2>账号统计</h2>
+          <h2>
+            <Sparkles size={16} aria-hidden="true" /> 账号统计
+          </h2>
           {data.members ? (
             <dl>
               {[
@@ -419,7 +436,7 @@ export default function Admin() {
               <AreaChart data={chart} margin={{ top: 10, right: 8, bottom: 0, left: -22 }}>
                 <defs>
                   <linearGradient id="views" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={colors[0]} stopOpacity={0.25} />
+                    <stop offset="0%" stopColor={colors[0]} stopOpacity={0.28} />
                     <stop offset="100%" stopColor={colors[0]} stopOpacity={0} />
                   </linearGradient>
                 </defs>

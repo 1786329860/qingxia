@@ -57,7 +57,7 @@ test('预约贺卡的模板、预览、收件确认链接和取消可操作', as
     fullPage: true,
   });
   await page.setViewportSize({ width: 320, height: 780 });
-  await page.getByRole('button', { name: '切换浅色模式' }).click();
+  await page.getByRole('button', { name: '切换深色模式' }).click();
   await page.getByRole('button', { name: /寄一片晴天/ }).click();
   await expect(page.getByRole('heading', { name: '见字如面', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);

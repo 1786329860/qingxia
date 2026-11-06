@@ -59,7 +59,7 @@ test('复制与下载反馈对应真实操作，主题切换保留输入和结�
   await page.getByRole('button', { name: '复制', exact: true }).click();
   await expect(page.getByRole('button', { name: '已复制', exact: true })).toBeVisible();
   expect(JSON.parse(await page.evaluate(() => navigator.clipboard.readText())).ok).toBe(true);
-  await page.getByRole('button', { name: '切换浅色模式', exact: true }).click();
+  await page.getByRole('button', { name: '切换深色模式', exact: true }).click();
   await expect(result).toHaveValue(/LOCAL_JSON_STATE_629/);
   await expect(page.locator('textarea').first()).toHaveValue(/LOCAL_JSON_STATE_629/);
   const pending = page.waitForEvent('download');

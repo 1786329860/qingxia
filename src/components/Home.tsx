@@ -215,7 +215,7 @@ export default function Home() {
               </span>
               <span>
                 <Check size={13} />
-                无需登录
+                免费账号
               </span>
               <span>
                 <Check size={13} />

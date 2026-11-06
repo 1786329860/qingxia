@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './member-fixture';
+import type { Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
 const primary = 'https://v1.douyinvod.com/fixture-main.webm';

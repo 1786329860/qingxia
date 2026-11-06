@@ -31,9 +31,7 @@ test('禁用JavaScript仍能读取首页和工具介绍，爬虫无需运行重�
   await page.locator('a.tool-card-link[href="/tool/douyin"]').click();
   await expect(page).toHaveTitle(/抖音链接解析.*轻匣/);
   await expect(page.getByRole('heading', { name: '抖音链接解析', exact: true })).toBeVisible();
-  await expect(
-    page.getByText('请启用 JavaScript 后粘贴公开作品分享链接。', { exact: false }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: '登录后使用这个工具' })).toBeVisible();
   expect(heavy).toEqual([]);
   await context.close();
 });

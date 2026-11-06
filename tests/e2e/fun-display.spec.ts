@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './member-fixture';
+import type { Page } from '@playwright/test';
 
 function watchPrivacy(page: Page, markers: string[]) {
   const writes: { url: string; body: string }[] = [];

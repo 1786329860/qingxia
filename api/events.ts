@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     type === 'pageview' &&
     typeof path === 'string' &&
     (/^\/$/.test(path) ||
-      /^\/(privacy|about)$/.test(path) ||
+      /^\/(privacy|about|wall|gifs|account)$/.test(path) ||
       (/^\/tool\/[a-z-]+$/.test(path) && toolIds.includes(path.slice(6))));
   const isTool =
     type === 'tool_use' &&
@@ -36,15 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (!(await consumeRate(req, 'events', 240, 60)))
       return json(res, 429, { error: '请求过于频繁' });
-    const { error } = await client
-      .from('qingxia_events')
-      .insert({
-        event_type: type,
-        visitor_hash: visitorHash(visitor.toLowerCase()),
-        tool_id: isTool ? tool : null,
-        outcome: isTool ? outcome : null,
-        path: isPage ? path : null,
-      });
+    const { error } = await client.from('qingxia_events').insert({
+      event_type: type,
+      visitor_hash: visitorHash(visitor.toLowerCase()),
+      tool_id: isTool ? tool : null,
+      outcome: isTool ? outcome : null,
+      path: isPage ? path : null,
+    });
     if (error) return json(res, 503, { error: '统计暂不可用' });
     return res.status(204).end();
   } catch {

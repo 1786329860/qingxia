@@ -3,10 +3,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import events from '../api/events';
 import admin from '../api/admin';
 import resolve from '../api/resolve';
+import community from '../api/community';
 const handlers: Record<string, typeof admin> = {
   '/api/events': events,
   '/api/admin': admin,
   '/api/resolve': resolve,
+  '/api/community': community,
 };
 export function localApi(): Plugin {
   return {
@@ -20,7 +22,12 @@ export function localApi(): Plugin {
         try {
           for await (const chunk of req) {
             raw += chunk;
-            if (Buffer.byteLength(raw) > 16384) {
+            const upload =
+              url.pathname === '/api/community' &&
+              req.method === 'POST' &&
+              url.searchParams.get('kind') === 'gifs' &&
+              url.searchParams.get('manage') === '1';
+            if (Buffer.byteLength(raw) > (upload ? 2_800_000 : 16384)) {
               res.statusCode = 413;
               res.end('请求过大');
               return;

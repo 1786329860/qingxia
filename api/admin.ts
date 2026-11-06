@@ -68,13 +68,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       new Date(end.getTime() - 86400000 + 8 * 3600000).toISOString().slice(0, 10) !== to
     )
       return json(res, 400, { error: '日期范围无效' });
-    const { data, error } = await client.rpc('qingxia_stats', {
+    const range = {
       p_from: start.toISOString(),
       p_to: end.toISOString(),
-    });
+    };
+    const [{ data, error }, members] = await Promise.all([
+      client.rpc('qingxia_stats', range),
+      client.rpc('qingxia_member_stats', range),
+    ]);
     if (error || !data || typeof data !== 'object' || Array.isArray(data))
       return json(res, 503, { error: '读取统计失败，请检查数据库迁移是否完成。' });
-    return json(res, 200, { ...data, from, to, timeZone: 'Asia/Shanghai' });
+    return json(res, 200, {
+      ...data,
+      members: members.error ? null : members.data,
+      from,
+      to,
+      timeZone: 'Asia/Shanghai',
+    });
   } catch {
     return json(res, 503, { error: '后台服务暂不可用，请稍后重试。' });
   }

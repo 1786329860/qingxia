@@ -653,7 +653,12 @@ function request(body: unknown, origin = 'https://qingxia.example', ip = '198.51
   return {
     method: 'POST',
     body,
-    headers: { origin, host: 'qingxia.example', 'content-type': 'application/json' },
+    headers: {
+      origin,
+      host: 'qingxia.example',
+      'content-type': 'application/json',
+      authorization: 'Bearer test-member',
+    },
     socket: { remoteAddress: ip },
   } as unknown as VercelRequest;
 }
@@ -664,6 +669,11 @@ function response() {
 }
 
 describe('resolve API safety and honest failure responses', () => {
+  vi.mock('../api/_lib/member', () => ({
+    verifiedMember: vi.fn(async (req: VercelRequest) =>
+      req.headers.authorization ? { id: 'test' } : null,
+    ),
+  }));
   beforeEach(() => {
     douyinResolveCache.clear();
     vi.stubEnv('SUPABASE_URL', '');
@@ -683,6 +693,16 @@ describe('resolve API safety and honest failure responses', () => {
     const invalid = response();
     await handler(request({ url: 'https://127.0.0.1/' }), invalid);
     expect(invalid.status).toHaveBeenCalledWith(400);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it('requires a verified session even for well-formed public URLs', async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+    const req = request({ url: 'https://v.douyin.com/abc/' });
+    delete req.headers.authorization;
+    const res = response();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
     expect(fetcher).not.toHaveBeenCalled();
   });
 

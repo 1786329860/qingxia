@@ -12,6 +12,7 @@ import { downloadBlob, errorMessage, formatBytes } from '../lib/files';
 import { trackToolUse } from '../lib/analytics';
 import { downloadPublicMedia, type DownloadMedia } from '../lib/douyin-download';
 import { extractShareURL, safeMediaURL } from '../../api/_lib/douyin';
+import { useMember } from '../components/MemberSession';
 interface Result {
   title: string;
   author: string;
@@ -21,6 +22,7 @@ interface Result {
   notice: string;
 }
 export default function DouyinTool() {
+  const { session } = useMember();
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -69,7 +71,10 @@ export default function DouyinTool() {
     try {
       const response = await fetch('/api/resolve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + (session?.access_token || ''),
+        },
         body: JSON.stringify({ url: extractShareURL(input).href }),
         signal: controller.signal,
       });

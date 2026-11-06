@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Box, ArrowUpRight, Sparkles } from 'lucide-react';
 import { tools, categories } from '../lib/registry';
-import FeedbackContact from '../components/FeedbackContact';
 export default function About() {
   return (
     <article className="prose-page">
@@ -15,7 +14,7 @@ export default function About() {
         <h2>小工具，也值得被认真设计。</h2>
         <p>
           不用为了压缩一张图片、整理一份 PDF，或校验一段
-          JSON，在不同网站之间反复跳转。我们把这些小事放进同一个干净的盒子里：免费、无需登录、没有广告。
+          JSON，在不同网站之间反复跳转。我们把这些小事放进同一个干净的盒子里：免费使用，没有广告。注册并验证邮箱后即可使用工具。
         </p>
         <p>
           能在本地完成的，就留在你的浏览器。重处理引擎只在需要时加载。每个工具都有自己的使用边界，我们会如实说明。
@@ -55,7 +54,12 @@ export default function About() {
         </p>
         <p>工具用于日常便利，不替代专业软件。请先用副本处理重要文件，并在使用结果前检查内容。</p>
       </section>
-      <FeedbackContact />
+      <section>
+        <h2>到留言墙聊聊</h2>
+        <p>
+          有功能建议，或想要一款新的表情包？欢迎在<Link to="/wall">轻匣留言墙</Link>贴一张便利贴。
+        </p>
+      </section>
       <Link className="button button-secondary" to="/privacy">
         了解隐私说明
         <ArrowUpRight size={15} />

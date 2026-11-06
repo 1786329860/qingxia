@@ -1,6 +1,7 @@
 import { randomBytes, createHmac, createHash } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { body, consumeRate, db, json, sameOrigin } from './_lib/core.js';
+import { verifiedMember } from './_lib/member.js';
 import {
   DouyinResolveError,
   extractShareURL,
@@ -42,6 +43,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         '请使用具体作品的分享链接，账号主页和搜索页暂不支持。',
         400,
       );
+    if (!(await verifiedMember(req)))
+      return json(res, 401, { error: '请登录已验证邮箱的轻匣账号' });
     const allowed = db() ? await consumeRate(req, 'resolve', 6, 60) : localLimit(req);
     if (!allowed) return json(res, 429, { error: '解析请求过于频繁，请一分钟后再试。' });
     const started = performance.now();

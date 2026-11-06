@@ -4,8 +4,15 @@ export const SITE_ORIGIN = 'https://qingxia.aixiaolv.icu';
 export const SITE_NAME = '轻匣';
 export const HOME_TITLE = '轻匣 - 免费无广告在线工具箱';
 export const SITE_DESCRIPTION =
-  '轻匣是免费、无广告、无需登录的中文在线工具箱，提供抖音公开链接解析、图片压缩、PDF、视频与文本等常用工具。本地工具在浏览器处理，文件与输入正文不上传。';
-export const PUBLIC_PATHS = ['/', '/about', '/privacy', ...tools.map((tool) => `/tool/${tool.id}`)];
+  '轻匣是免费、无广告的中文在线工具箱，注册登录后可使用抖音公开链接解析、图片压缩、PDF、视频与文本等常用工具。本地工具在浏览器处理，文件与输入正文不上传。';
+export const PUBLIC_PATHS = [
+  '/',
+  '/about',
+  '/privacy',
+  '/wall',
+  '/gifs',
+  ...tools.map((tool) => `/tool/${tool.id}`),
+];
 
 export interface PageSeo {
   title: string;
@@ -19,29 +26,40 @@ export function getPageSeo(pathname: string, search = ''): PageSeo {
   const path = pathname.replace(/\/+$/, '') || '/';
   const tool = path.startsWith('/tool/') ? getTool(path.slice(6)) : undefined;
   const known = PUBLIC_PATHS.includes(path);
-  const privatePage = path === '/admin' || path.startsWith('/admin/');
+  const privatePage = path === '/account' || path === '/admin' || path.startsWith('/admin/');
+  const communityTitle =
+    path === '/wall' ? '留言墙 · 轻匣' : path === '/gifs' ? 'GIF 表情包下载 · 轻匣' : '';
   const personalView =
     path === '/' && ['favorites', 'recent'].includes(new URLSearchParams(search).get('view') || '');
   const title = tool
     ? `${tool.name} - 轻匣免费在线工具箱`
-    : path === '/about'
-      ? '关于轻匣 - 免费、无广告、隐私优先的在线工具箱'
-      : path === '/privacy'
-        ? '隐私说明 - 轻匣在线工具箱'
-        : privatePage
-          ? '站长工作台 · 轻匣'
-          : known
-            ? HOME_TITLE
-            : '页面不存在 · 轻匣';
+    : communityTitle ||
+      (path === '/about'
+        ? '关于轻匣 - 免费、无广告、隐私优先的在线工具箱'
+        : path === '/privacy'
+          ? '隐私说明 - 轻匣在线工具箱'
+          : privatePage
+            ? path === '/account'
+              ? '账号 · 轻匣'
+              : '站长工作台 · 轻匣'
+            : known
+              ? HOME_TITLE
+              : '页面不存在 · 轻匣');
   const description = tool
-    ? `${tool.name}：${tool.description}${tool.mode === 'local' ? '免费、无需登录，在浏览器内处理，文件与输入正文不上传。' : '实验性功能，仅处理有权保存的公开内容，解析与下载受平台访问策略限制。'}`
+    ? `${tool.name}：${tool.description}${tool.mode === 'local' ? '登录后免费使用，在浏览器内处理，文件与输入正文不上传。' : '实验性功能，仅处理有权保存的公开内容，解析与下载受平台访问策略限制。'}`
     : path === '/about'
-      ? '了解轻匣：免费、无广告、普通用户无需登录的中文在线工具箱，提供本地文件处理与常用实用工具，并欢迎通过邮箱提出优化与功能建议。'
+      ? '了解轻匣：免费、无广告的中文在线工具箱，提供本地文件处理与常用实用工具，欢迎在留言墙提出优化与功能建议。'
       : path === '/privacy'
         ? '轻匣隐私说明：本地工具不上传文件内容、文件名或输入正文；公开链接解析与匿名统计的处理边界公开透明。'
-        : privatePage
-          ? '轻匣站长独立密码保护的统计后台。'
-          : SITE_DESCRIPTION;
+        : path === '/wall'
+          ? '在轻匣留言墙贴一张便利贴，留下工具建议和表情包点子。'
+          : path === '/gifs'
+            ? '在轻匣浏览和下载免费的 GIF 表情包，欢迎留言提出制作建议。'
+            : path === '/account'
+              ? '登录或注册免费轻匣账号。'
+              : privatePage
+                ? '轻匣站长独立密码保护的统计后台。'
+                : SITE_DESCRIPTION;
   const canonical = `${SITE_ORIGIN}${known || privatePage ? path : '/'}`;
   const robots = privatePage
     ? 'noindex, nofollow'

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { test, expect } from './member-fixture';
 import { readFile } from 'node:fs/promises';
 
 test('上传区真实拖入、空拖入保护和键盘选择生效，文件正文不上传', async ({ page }) => {

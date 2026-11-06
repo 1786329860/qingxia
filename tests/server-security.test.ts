@@ -269,7 +269,10 @@ describe('统计读取权限和日期输入', () => {
       hourly: [],
       tools: [],
     };
-    storage.rpc.mockResolvedValue({ data: aggregate, error: null });
+    const members = { registered: 4, newRegistrations: 1, logins: 3, active: 2 };
+    storage.rpc
+      .mockResolvedValueOnce({ data: aggregate, error: null })
+      .mockResolvedValueOnce({ data: members, error: null });
     const { res, result } = response();
     await admin(
       request({
@@ -286,6 +289,7 @@ describe('统计读取权限和日期输入', () => {
     expect(result.statusCode).toBe(200);
     expect(result.data).toEqual({
       ...aggregate,
+      members,
       from: '2026-10-26',
       to: '2026-10-26',
       timeZone: 'Asia/Shanghai',

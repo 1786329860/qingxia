@@ -10,6 +10,10 @@ import type { ResolvedMedia } from '../api/_lib/douyin';
 import handler from '../api/resolve';
 import { consumeRate } from '../api/_lib/core';
 
+vi.mock('../api/_lib/member', () => ({
+  verifiedMember: vi.fn(async () => ({ id: 'test-member' })),
+}));
+
 vi.mock('../api/_lib/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/_lib/core')>();
   return { ...original, db: vi.fn(() => ({})), consumeRate: vi.fn(async () => true) };

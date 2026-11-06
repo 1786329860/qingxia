@@ -9,17 +9,26 @@ import {
   Grid2X2,
   Heart,
   History,
+  ImagePlay,
   Menu,
+  MessagesSquare,
   Moon,
   Search,
   ShieldCheck,
   Sparkles,
   Sun,
+  UserRound,
   X,
 } from 'lucide-react';
 import { categories, getTool, tools } from '../lib/registry';
 import { useFavorites } from '../lib/preferences';
-import { feedbackMailto } from '../lib/contact';
+import { useMember } from './MemberSession';
+
+const communityPages: Record<string, string> = {
+  '/wall': '留言墙',
+  '/gifs': 'GIF 表情包',
+  '/account': '我的账号',
+};
 
 function Brand() {
   return (
@@ -37,6 +46,7 @@ function Brand() {
 export default function SiteShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { session } = useMember();
   const sidebarRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,6 +69,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
     : undefined;
   const pageName =
     currentTool?.name ||
+    communityPages[location.pathname] ||
     (location.pathname === '/privacy'
       ? '隐私说明'
       : location.pathname === '/about'
@@ -230,6 +241,15 @@ export default function SiteShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
+          <div className="nav-section-label">轻匣社区</div>
+          <NavLink className="nav-item" to="/wall">
+            <MessagesSquare size={18} />
+            <span>留言墙</span>
+          </NavLink>
+          <NavLink className="nav-item" to="/gifs">
+            <ImagePlay size={18} />
+            <span>GIF 表情包</span>
+          </NavLink>
         </nav>
         <div className="sidebar-bottom">
           <Link to="/privacy" className="privacy-card">
@@ -267,7 +287,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           <div className="topbar-actions">
             <span className="topbar-status">
               <span className="status-dot" />
-              无需登录，打开即用
+              免费 · 无广告
             </span>
             <button className="topbar-search" onClick={focusSearch} aria-label="搜索工具">
               <Search size={16} />
@@ -277,6 +297,14 @@ export default function SiteShell({ children }: { children: ReactNode }) {
               </kbd>
             </button>
             <span className="topbar-separator" />
+            <Link
+              to="/account"
+              className="account-nav-link"
+              aria-label={session ? '我的账号' : '登录或注册'}
+            >
+              <UserRound size={18} />
+              <span>{session ? '我的账号' : '登录 / 注册'}</span>
+            </Link>
             <button
               className="icon-button theme-toggle"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -299,7 +327,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             免费使用<span className="footer-dot">·</span>无广告<span className="footer-dot">·</span>
             <Link to="/privacy">隐私优先</Link>
             <span className="footer-dot">·</span>
-            <a href={feedbackMailto}>反馈与建议</a>
+            <Link to="/wall">留言与建议</Link>
             <Sparkles size={13} />
           </span>
         </footer>

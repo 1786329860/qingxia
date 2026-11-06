@@ -11,8 +11,19 @@
 1. `supabase/migrations/001_analytics.sql`：创建事件表、限流表、统计函数和权限。
 2. 在 Database / Extensions 或 Integrations 中启用 Cron（`pg_cron`）。
 3. `supabase/migrations/002_retention_cron.sql`：每天北京时间 03:17 清理 90 天前的原始事件和过期限流记录。执行后核对 `cron.job` 任务确实存在。
+4. `supabase/migrations/20261106111716_member_community.sql`：一次性创建会员活跃记录、留言、GIF 元数据及私有存储桶。保留原 Cron，追加会员活跃记录清理。
 
-迁移可重复执行，保留已存在事件。不要给 `anon` 或 `authenticated` 新建访问事件表的策略，也不要把 `service_role` 密钥给前端。
+迁移保留已存在事件。按迁移记录只应用缺失的文件。不要给 `anon` 或 `authenticated` 新建访问私有表的策略，也不要把 `service_role` 密钥给前端。
+
+在现有 Supabase 项目 Authentication 配置以下项目。
+
+- Sign In / Providers 保持邮箱注册与邮箱确认开启、匿名登录关闭。
+- Emails / SMTP Settings 使用 QQ 邮箱的现有发件配置。主机 `smtp.qq.com`，端口 `465`，发件地址和用户名使用同一邮箱，授权码只填在加密的 Password 字段。
+- Emails / Templates 的 Confirm sign up 和 Reset password 正文均使用 `{{ .Token }}` 显示验证码。账号页使用邮箱加验证码完成验证与找回。
+- URL Configuration 中使用正式域名 `https://qingxia.aixiaolv.icu`。Audit Logs 开启数据库审计，以汇总成功登录。
+- 复制到其他 Supabase 项目时，构建环境使用 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABLE_KEY` 指向对应项目。仅使用 `sb_publishable_` 公钥；本站生产默认值指向现有项目。
+
+上线前实测邮箱收件、验码、密码找回和新密码登录，再启用需要登录的前端版本。GIF 由现有站长后台上传，私有桶限制单文件 2 MiB，公开请求仅能读取已发布的图片。
 
 ## 2. 创建 Vercel 项目
 

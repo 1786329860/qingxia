@@ -22,7 +22,7 @@ try {
   const { PUBLIC_PATHS, getPageSeo, renderPublicPage, serializeStructuredData, SITE_NAME } =
     await server.ssrLoadModule('/src/entry-server.tsx');
   const template = await readFile('dist/index.html', 'utf8');
-  for (const path of [...PUBLIC_PATHS, '/admin']) {
+  for (const path of [...PUBLIC_PATHS, '/admin', '/account']) {
     const seo = getPageSeo(path);
     const meta = [
       `<link rel="canonical" href="${escape(seo.canonical)}" />`,

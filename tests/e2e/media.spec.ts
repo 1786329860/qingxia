@@ -1,4 +1,5 @@
-import { test, expect, type Page, type Request } from '@playwright/test';
+import { test, expect, mockMember } from './member-fixture';
+import type { Page, Request } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { unzipSync } from 'fflate';
 
@@ -46,6 +47,7 @@ function setWebMDuration(bytes: Buffer, milliseconds: number): Buffer {
 
 test.beforeAll(async ({ browser, baseURL }) => {
   const page = await browser.newPage();
+  await mockMember(page.context());
   try {
     await page.goto(baseURL || 'http://127.0.0.1:5173');
     await page.locator('body').click({ position: { x: 2, y: 2 } });

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './member-fixture';
 import { readFile } from 'node:fs/promises';
 const ids = [
   'image-compress',

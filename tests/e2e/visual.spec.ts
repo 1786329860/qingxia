@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, mockMember } from './member-fixture';
+import type { Page } from '@playwright/test';
 
 async function pngFixture(page: Page) {
   const data = await page.evaluate(() => {
@@ -88,6 +89,7 @@ test('减少动态与低设备预算保留完整静态主视觉及可用搜索',
         Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, value: 2 });
         Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 1 });
       });
+    await mockMember(context);
     const page = await context.newPage();
     await page.goto(test.info().project.use.baseURL + '/');
     const scene = page.locator('.breathing-scene');
@@ -150,6 +152,7 @@ test('390与320触屏布局、键盘导航和主题对比不依赖悬停', async
       hasTouch: true,
       reducedMotion: 'reduce',
     });
+    await mockMember(context);
     const page = await context.newPage();
     await page.goto(test.info().project.use.baseURL + '/');
     await expect(page.locator('.tool-card')).toHaveCount(28);

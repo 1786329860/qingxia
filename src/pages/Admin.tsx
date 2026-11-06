@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CommunityAdmin from './CommunityAdmin';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -34,6 +35,7 @@ interface Counts {
   uses: number;
 }
 interface Stats {
+  members?: { registered: number; newRegistrations: number; logins: number; active: number } | null;
   summary: Counts & { success: number };
   daily: (Counts & { day: string })[];
   hourly: (Counts & { hour: string })[];
@@ -200,7 +202,7 @@ export default function Admin() {
         )}
         <div className="admin-gate-note">
           <ShieldCheck size={14} />
-          <span>独立密码保护 · 普通用户无需登录</span>
+          <span>独立密码保护 · 仅供站长使用</span>
         </div>
         <button className="text-button" onClick={preview}>
           <FlaskConical size={14} />
@@ -341,6 +343,28 @@ export default function Admin() {
           </section>
         ))}
       </div>
+      {!demo && (
+        <section className="member-stats" aria-label="注册与活跃统计">
+          <h2>账号统计</h2>
+          {data.members ? (
+            <dl>
+              {[
+                ['已验证账号总数', data.members.registered],
+                ['区间新增已验证账号', data.members.newRegistrations],
+                ['区间登录次数', data.members.logins],
+                ['区间活跃账号（去重）', data.members.active],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value.toLocaleString('zh-CN')}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="muted">账号统计暂不可用，请确认数据库迁移。</p>
+          )}
+        </section>
+      )}
       <div className="dashboard-grid">
         <section className="chart-card trend-card">
           <div className="chart-heading">
@@ -593,6 +617,7 @@ export default function Admin() {
           {!pie.length && <div className="chart-empty">所选日期暂无使用记录。</div>}
         </div>
       </section>
+      {!demo && <CommunityAdmin />}
       <p className="admin-footnote">
         <ShieldCheck size={14} />
         数据采用匿名统计，可能受关闭统计、浏览器拦截或网络影响。多日访客为日 UV

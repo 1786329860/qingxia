@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import SiteShell from './components/SiteShell';
 import Home from './components/Home';
+import { MemberGate, MemberSession, useMember } from './components/MemberSession';
+import './pages/community.css';
 import { getTool, categories } from './lib/registry';
 import { useFavorites, rememberTool } from './lib/preferences';
 import { trackPageView } from './lib/analytics';
@@ -19,6 +21,9 @@ import { getPageSeo, updateDocumentSeo } from './lib/seo';
 const Admin = lazy(() => import('./pages/Admin'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const About = lazy(() => import('./pages/About'));
+const Account = lazy(() => import('./pages/Account'));
+const Wall = lazy(() => import('./pages/Community').then((m) => ({ default: m.Wall })));
+const Gallery = lazy(() => import('./pages/Community').then((m) => ({ default: m.Gallery })));
 const pages: Record<string, ReturnType<typeof lazy>> = {
   'image-compress': lazy(() =>
     import('./tools/images').then((m) => ({ default: m.ImageCompressTool })),
@@ -90,9 +95,10 @@ function ToolRoute() {
   const { id = '' } = useParams();
   const tool = getTool(id);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { session } = useMember();
   useEffect(() => {
-    if (tool) rememberTool(tool.id);
-  }, [tool?.id]);
+    if (tool && session) rememberTool(tool.id);
+  }, [tool?.id, session?.user.id]);
   if (!tool || !pages[id]) return <NotFound />;
   const View = pages[id];
   const Icon = tool.icon;
@@ -129,21 +135,11 @@ function ToolRoute() {
             ? '本地处理，文件不会离开你的浏览器'
             : '仅解析链接，不保存媒体文件'}
         </strong>
-        <span>{tool.mode === 'local' ? '安心使用 · 无需登录' : '只处理你主动提交的公开链接'}</span>
+        <span>{tool.mode === 'local' ? '安心使用 · 永久免费' : '只处理你主动提交的公开链接'}</span>
       </div>
       <div className="tool-panel">
         <PageBoundary key={id}>
-          <Suspense fallback={<Loading />}>
-            {typeof window === 'undefined' ? (
-              <p className="muted">
-                {tool.mode === 'local'
-                  ? '本工具在浏览器内处理，请启用 JavaScript 后使用。文件与输入正文不上传。'
-                  : '请启用 JavaScript 后粘贴公开作品分享链接。实验性解析与下载受平台访问策略限制。'}
-              </p>
-            ) : (
-              <View />
-            )}
-          </Suspense>
+          <Suspense fallback={<Loading />}>{session ? <View /> : <MemberGate />}</Suspense>
         </PageBoundary>
       </div>
       <div className="tool-bottom-note">
@@ -186,20 +182,25 @@ function RouteEffects() {
 }
 export default function App() {
   return (
-    <SiteShell>
-      <RouteEffects />
-      <PageBoundary>
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/tool/:id" element={<ToolRoute />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </PageBoundary>
-    </SiteShell>
+    <MemberSession>
+      <SiteShell>
+        <RouteEffects />
+        <PageBoundary>
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/tool/:id" element={<ToolRoute />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/wall" element={<Wall />} />
+              <Route path="/gifs" element={<Gallery />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </PageBoundary>
+      </SiteShell>
+    </MemberSession>
   );
 }

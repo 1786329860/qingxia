@@ -1,4 +1,5 @@
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { test, expect } from './member-fixture';
+import type { Page, BrowserContext } from '@playwright/test';
 
 test.use({ reducedMotion: 'reduce' });
 

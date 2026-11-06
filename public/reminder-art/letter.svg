@@ -1,15 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" fill="none">
-<defs><pattern id="edge" width="38" height="18" patternUnits="userSpaceOnUse"><path d="M-8 18 10 0h13L5 18ZM30 18 48 0h13L43 18Z" fill="#6b78b3"/></pattern></defs>
-<rect width="720" height="280" fill="#e3e6f8"/>
-<path d="M26 23H694V257H26Z" stroke="#58679a" stroke-opacity=".48"/>
-<path d="M26 23h668v13H26zm0 221h668v13H26z" fill="url(#edge)"/>
-<path d="M71 124H236m-165 20h165M71 164h108M71 184h133" stroke="#6673a7" stroke-opacity=".55" stroke-width="1.6"/>
-<path d="M462 77h109v127H462z" fill="#faf8fc" stroke="#505c9a" stroke-width="2" stroke-dasharray="4 3"/>
-<path d="M471 86h91v109h-91z" fill="#aab4e1"/>
-<path d="M476 172c17-25 33-29 48-16 10 9 21 7 33-8v43h-81z" fill="#6676b2"/>
-<circle cx="536" cy="121" r="15" fill="#f2ead8"/>
-<circle cx="448" cy="150" r="51" stroke="#344374" stroke-width="2" stroke-opacity=".7"/>
-<circle cx="448" cy="150" r="43" stroke="#344374" stroke-dasharray="2 4" stroke-opacity=".7"/>
-<path d="M566 140c38-20 59 21 95 0m-95 12c38-20 59 21 95 0m-95 12c38-20 59 21 95 0" stroke="#4d5d92" stroke-opacity=".73" stroke-width="1.5"/>
-<path d="M431 150h34m-17-17v34" stroke="#354577"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" fill="none"><defs><pattern id="paper" width="17" height="19" patternUnits="userSpaceOnUse"><path d="M1 4h1m8 9h1m-5 5h1m8-15h1" stroke="#171423" stroke-opacity=".19" stroke-width="1.2"/></pattern><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(29)"><path d="M0 0v6" stroke="#171423" stroke-opacity=".29" stroke-width="1"/></pattern><path id="star" d="M0-18 3-4 17 0 3 4 0 18-3 4-17 0-3-4Z"/></defs><rect width="960" height="480" fill="#92b5bc"/><path d="M28 28h904v424H28Z" stroke="#335969" stroke-width="2"/><path d="M42 42h876v396H42Z" stroke="#335969" stroke-opacity=".4"/>
+<g transform="rotate(-5 455 239)"><rect x="145" y="89" width="665" height="307" rx="6" fill="#496779" opacity=".55" transform="translate(8 12)"/><rect x="145" y="89" width="665" height="307" rx="6" fill="#f3e6cd"/>
+<rect x="162" y="106" width="414" height="273" rx="3" fill="#a8c1be"/><circle cx="410" cy="184" r="47" fill="#e9b15a"/>
+<path d="M162 281c49-45 94-81 138-70 39 10 55 43 96 41 37-2 87-40 180-10v137H162Z" fill="#688c90"/><path d="M162 319c55-28 102-52 148-40 68 18 72 54 163 30 33-9 62-17 103-5v75H162Z" fill="#345f76"/><path d="M162 346c94-40 157-16 233 11 45 16 103 11 181-18v40H162Z" fill="#243c5a"/><path d="M166 337c53-24 102-29 159-16m107 35c42 10 94 6 136-7" stroke="#a8c1be" stroke-width="2"/>
+<path d="M313 169c9-8 18-7 25 1 6-7 17-9 25-2m-78 22c6-5 12-5 17 1 5-5 10-6 16-2" stroke="#244056" stroke-width="2.5"/>
+<rect x="677" y="123" width="104" height="100" fill="#bc6e4c" stroke="#6e493f" stroke-width="2" stroke-dasharray="4 4"/><circle cx="729" cy="171" r="35" fill="#f5d4a4"/><path d="M708 171h42m-21-21v42" stroke="#ab5d47" stroke-width="2"/>
+<path d="M609 266h159m-159 30h159m-159 30h107m-107 30h129" stroke="#698685" stroke-width="2" stroke-opacity=".7"/></g>
+<path d="M60 112c32-24 53 21 81 0m-81 14c32-24 53 21 81 0M820 332c36-19 57 23 88 2m-88 14c36-19 57 23 88 2" stroke="#395e70" stroke-width="3"/><rect width="960" height="480" fill="url(#paper)"/></svg>

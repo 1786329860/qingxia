@@ -41,10 +41,16 @@
   align-items: start;
 }
 .reminder-guest {
-  align-items: center;
+  align-items: start;
+}
+.reminder-guest-options {
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
 }
 .reminder-guest h2 {
-  margin: 0;
+  margin: 0 0 14px;
 }
 .reminder-guest p {
   margin: 12px 0 20px;
@@ -108,9 +114,10 @@
 .template-choice img {
   display: block;
   width: 100%;
-  height: 50px;
+  height: auto;
+  aspect-ratio: 2 / 1;
   object-fit: cover;
-  border-radius: 5px;
+  border-radius: 7px;
 }
 .reminder-fields {
   display: grid;
@@ -162,20 +169,28 @@
   height: auto;
 }
 .mail-card-copy {
-  padding: clamp(18px, 3.4vw, 36px);
+  padding: clamp(18px, 3.4vw, 34px) 8%;
+}
+.mail-card-envelope {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 8%;
+  font-size: 13px;
+}
+.mail-card-title {
+  padding: clamp(18px, 3.4vw, 32px) 8% clamp(16px, 3vw, 26px);
+  border-top: 1px solid;
 }
 .mail-card-stamp {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13px;
-  letter-spacing: 0.06em;
-}
-.mail-card-stamp span {
-  opacity: 0.5;
+  letter-spacing: 0.14em;
 }
 .mail-card h2 {
-  margin: 12px 0 18px;
-  font-family: Georgia, 'Qingxia Song', 'Songti SC', serif;
-  font-size: clamp(25px, 4vw, 39px);
+  margin: 9px 0 0;
+  font-family: 'Qingxia Song', 'Songti SC', SimSun, serif;
+  font-size: clamp(27px, 4vw, 42px);
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
@@ -192,7 +207,8 @@
 }
 .mail-card-foot {
   border-top: 1px solid;
-  padding: 12px clamp(18px, 3.4vw, 36px);
+  margin: 0 8%;
+  padding: 16px 0 22px;
   font-size: 13px;
 }
 .reminder-invite,

@@ -6,7 +6,7 @@
   "trailingSlash": false,
   "functions": {
     "api/resolve.ts": { "maxDuration": 30 },
-    "api/reminders.ts": { "maxDuration": 25 }
+    "api/reminders.ts": { "maxDuration": 25, "includeFiles": "public/reminder-art/*.png" }
   },
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/" }],
   "headers": [

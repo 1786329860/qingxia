@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { CalendarClock, Check, Copy, Mail, RefreshCw } from 'lucide-react';
 import { useMember } from '../components/MemberSession';
 import {
+  defaultReminderTemplate,
   reminderOptions,
   reminderTemplates,
   type Reminder,
@@ -62,25 +63,65 @@ function CardPreview({
   message: string;
 }) {
   const card = reminderTemplates[template];
+  const art = <img src={'/reminder-art/' + template + '.svg'} alt="" width={960} height={480} />;
   return (
     <article
       className="mail-card"
       data-template={template}
       style={{ background: card.paper, color: card.ink }}
     >
-      <img src={'/reminder-art/' + template + '.svg'} alt="" width={720} height={280} />
-      <div className="mail-card-copy">
-        <span className="mail-card-stamp">
-          {card.name} <span>／</span> 轻匣来信
+      <div className="mail-card-envelope">
+        <strong>轻匣来信</strong>
+        <span style={{ color: card.accent }}>{card.name}</span>
+      </div>
+      {card.layout === 'cover' && art}
+      <div className="mail-card-title" style={{ borderColor: card.accent }}>
+        <span className="mail-card-stamp" style={{ color: card.accent }}>
+          {card.mark}
         </span>
         <h2>{card.occasion}</h2>
+      </div>
+      {card.layout === 'folio' && art}
+      <div className="mail-card-copy">
         <p className="mail-card-to">写给 {name.trim() || '你想念的人'}</p>
         <p className="mail-card-message">{message.trim() || card.placeholder}</p>
       </div>
-      <div className="mail-card-foot" style={{ borderColor: card.accent }}>
-        一封预先写好的信
+      <div className="mail-card-foot" style={{ borderColor: card.accent, color: card.accent }}>
+        {card.closing}
       </div>
     </article>
+  );
+}
+
+function TemplatePicker({
+  template,
+  setTemplate,
+  busy = false,
+}: {
+  template: ReminderTemplate;
+  setTemplate: (key: ReminderTemplate) => void;
+  busy?: boolean;
+}) {
+  return (
+    <fieldset className="template-field">
+      <legend>选一张贺卡</legend>
+      <div className="template-options">
+        {reminderOptions.map((key) => (
+          <button
+            type="button"
+            className="template-choice"
+            key={key}
+            disabled={busy}
+            aria-pressed={template === key}
+            onClick={() => setTemplate(key)}
+          >
+            <img src={'/reminder-art/' + key + '.svg'} alt="" width={960} height={480} />
+            <span>{reminderTemplates[key].category}</span>
+            <strong>{reminderTemplates[key].name}</strong>
+          </button>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 
@@ -88,6 +129,7 @@ export default function Reminders() {
   const { session, ready } = useMember();
   const { hash, pathname, search } = useLocation();
   const [invitation, setInvitation] = useState('');
+  const [template, setTemplate] = useState(defaultReminderTemplate);
   useEffect(() => {
     const token = /^#accept=([a-z\d_-]{43})$/i.exec(hash)?.[1];
     try {
@@ -116,7 +158,7 @@ export default function Reminders() {
       <header className="reminder-heading">
         <div>
           <h1>把祝福写在今天</h1>
-          <p>为生日、纪念日或任何想记住的日子写一封信。轻匣会在约定时间发出。</p>
+          <p>相识纪念、道谢、庆祝好消息，或只是想问声好。先写好这封信，让轻匣在约定时间送出。</p>
         </div>
         <span className="reminder-heading-icon" aria-hidden="true">
           <CalendarClock size={36} strokeWidth={1.3} />
@@ -129,12 +171,14 @@ export default function Reminders() {
           email={session.user.email || ''}
           invitation={invitation}
           clearInvitation={clearInvitation}
+          template={template}
+          setTemplate={setTemplate}
         />
       ) : (
         <div className="reminder-guest">
-          <CardPreview template="birthday" name="" message="" />
-          <div>
-            <h2>{invitation ? '你收到一张来信邀请' : '为值得记住的日子，留一张卡片'}</h2>
+          <div className="reminder-guest-options">
+            <h2>{invitation ? '你收到一张来信邀请' : '今天想写哪一封？'}</h2>
+            {!invitation && <TemplatePicker template={template} setTemplate={setTemplate} />}
             <p>
               {invitation
                 ? '用邀请所指定的收件邮箱登录，即可决定是否接收这封预约邮件。'
@@ -148,6 +192,7 @@ export default function Reminders() {
               <p role="status">正在检查登录状态…</p>
             )}
           </div>
+          <CardPreview template={template} name="" message="" />
         </div>
       )}
     </section>
@@ -159,13 +204,16 @@ function ReminderDesk({
   email,
   invitation,
   clearInvitation,
+  template,
+  setTemplate,
 }: {
   token: string;
   email: string;
   invitation: string;
   clearInvitation: () => void;
+  template: ReminderTemplate;
+  setTemplate: (key: ReminderTemplate) => void;
 }) {
-  const [template, setTemplate] = useState<ReminderTemplate>('birthday');
   const [recipient, setRecipient] = useState(email);
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -279,27 +327,7 @@ function ReminderDesk({
       )}
       <div className="reminder-desk">
         <form className="community-form reminder-form" onSubmit={schedule}>
-          <fieldset className="template-field">
-            <legend>选一张贺卡</legend>
-            <div className="template-options">
-              {reminderOptions.map((key) => (
-                <button
-                  type="button"
-                  className="template-choice"
-                  key={key}
-                  disabled={busy}
-                  aria-pressed={template === key}
-                  onClick={() => setTemplate(key)}
-                >
-                  <img src={'/reminder-art/' + key + '.svg'} alt="" width={720} height={280} />
-                  <strong>{reminderTemplates[key].name}</strong>
-                  <span>
-                    {key === 'birthday' ? '生日' : key === 'anniversary' ? '纪念日' : '日常问候'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
+          <TemplatePicker template={template} setTemplate={setTemplate} busy={busy} />
           <div className="reminder-fields">
             <label>
               收件邮箱

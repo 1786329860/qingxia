@@ -95,3 +95,15 @@ Cloudflare 普通 DNS 或代理不能承诺大陆网络稳定性。不要缓存�
 如需要代理继续自动部署，可在云环境安全设置中配置有适当最小权限的 `VERCEL_TOKEN`、`SUPABASE_ACCESS_TOKEN`，并允许访问 `api.vercel.com`、`api.supabase.com`。不要把值放到仓库或聊天。之后再由代理验证账户/组织、创建免费资源、执行迁移和部署。数据库管理令牌与应用运行的 `service_role` 是不同用途，不互相替代。
 
 域名 DNS 修改还需要 Cloudflare 对对应域名的账户权限；没有绑定时，应保留 Vercel 提供的公开地址，不能宣称自定义域名已经接入。
+
+## 预约贺卡邮件
+
+在已有项目依次应用 `20261106121712_scheduled_cards.sql`、`20261106121714_scheduled_cards_cron.sql`。第一份创建私有预约表和队列函数，第二份使用现有 pg_cron、Vault 和 pg_net。保留现有访问统计清理任务。
+
+Vercel Production 添加 `REMINDER_SMTP_USER`、`REMINDER_SMTP_PASSWORD`、`REMINDER_CRON_SECRET`，后三者均从服务商安全设置配置。使用 QQ 邮箱 SMTPS 465，调度密钥至少 32 个随机字符。将同一调度密钥存到 Supabase Vault 中的 `qingxia_reminder_dispatch`。调度任务只在有已确认的到期预约且小时额度可用时，请求 Vercel 默认域名的私有派发入口。
+
+- `qingxia-reminder-dispatch` 每分钟扫描，带事务锁认领，发送结果不明时标记待确认，避免自动重复发信。
+- `qingxia-reminder-retention` 每天北京时间 03:23 删除 30 天前已结束的预约。
+- 每账号 24 小时内最多创建 4 条，最多同时 12 条未结束。全站每小时最多尝试发出 6 封。
+- 验收时确认 Cron 实际成功执行、预约状态实际变为已交给邮件服务，并检查测试邮箱确实收到。HTTP 成功与邮箱送达应分别记录。
+- 公共贺卡图案位于 `public/reminder-art/`，SVG 为原创图稿，PNG 供邮件客户端使用。关闭远程图片的客户端仍可读取排版和正文。

@@ -4,7 +4,7 @@ import { tools } from '../src/lib/registry';
 
 describe('public search metadata', () => {
   it('lists every public tool once and excludes private/API/personal state', () => {
-    expect(PUBLIC_PATHS).toHaveLength(tools.length + 5);
+    expect(PUBLIC_PATHS).toHaveLength(tools.length + 6);
     expect(new Set(PUBLIC_PATHS).size).toBe(PUBLIC_PATHS.length);
     expect(PUBLIC_PATHS.some((path) => /admin|api|account|\?|#/.test(path))).toBe(false);
     for (const path of PUBLIC_PATHS) {

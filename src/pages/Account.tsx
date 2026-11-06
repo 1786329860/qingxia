@@ -39,7 +39,7 @@ export default function Account() {
   const [search] = useSearchParams();
   const navigate = useNavigate();
   const next = search.get('next') || '/';
-  const destination = /^(?:\/wall|\/tool\/[a-z-]+)$/.test(next) ? next : '/';
+  const destination = /^(?:\/(?:wall|reminders)|\/tool\/[a-z-]+)$/.test(next) ? next : '/';
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

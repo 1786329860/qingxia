@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
     'SUPABASE_SERVICE_ROLE_KEY',
     'ADMIN_PASSWORD',
     'ADMIN_SESSION_SECRET',
+    'REMINDER_CRON_SECRET',
+    'REMINDER_SMTP_USER',
+    'REMINDER_SMTP_PASSWORD',
   ])
     if (values[name] && !process.env[name]) process.env[name] = values[name];
   return {

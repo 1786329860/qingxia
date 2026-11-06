@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" fill="none">
+<defs><pattern id="edge" width="38" height="18" patternUnits="userSpaceOnUse"><path d="M-8 18 10 0h13L5 18ZM30 18 48 0h13L43 18Z" fill="#6b78b3"/></pattern></defs>
+<rect width="720" height="280" fill="#e3e6f8"/>
+<path d="M26 23H694V257H26Z" stroke="#58679a" stroke-opacity=".48"/>
+<path d="M26 23h668v13H26zm0 221h668v13H26z" fill="url(#edge)"/>
+<path d="M71 124H236m-165 20h165M71 164h108M71 184h133" stroke="#6673a7" stroke-opacity=".55" stroke-width="1.6"/>
+<path d="M462 77h109v127H462z" fill="#faf8fc" stroke="#505c9a" stroke-width="2" stroke-dasharray="4 3"/>
+<path d="M471 86h91v109h-91z" fill="#aab4e1"/>
+<path d="M476 172c17-25 33-29 48-16 10 9 21 7 33-8v43h-81z" fill="#6676b2"/>
+<circle cx="536" cy="121" r="15" fill="#f2ead8"/>
+<circle cx="448" cy="150" r="51" stroke="#344374" stroke-width="2" stroke-opacity=".7"/>
+<circle cx="448" cy="150" r="43" stroke="#344374" stroke-dasharray="2 4" stroke-opacity=".7"/>
+<path d="M566 140c38-20 59 21 95 0m-95 12c38-20 59 21 95 0m-95 12c38-20 59 21 95 0" stroke="#4d5d92" stroke-opacity=".73" stroke-width="1.5"/>
+<path d="M431 150h34m-17-17v34" stroke="#354577"/>
+</svg>

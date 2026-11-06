@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     type === 'pageview' &&
     typeof path === 'string' &&
     (/^\/$/.test(path) ||
-      /^\/(privacy|about|wall|gifs|account)$/.test(path) ||
+      /^\/(privacy|about|wall|gifs|account|reminders)$/.test(path) ||
       (/^\/tool\/[a-z-]+$/.test(path) && toolIds.includes(path.slice(6))));
   const isTool =
     type === 'tool_use' &&

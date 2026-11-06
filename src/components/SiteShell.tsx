@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowUpRight,
   Box,
+  CalendarClock,
   Check,
   ChevronRight,
   Command,
@@ -28,6 +29,7 @@ const communityPages: Record<string, string> = {
   '/wall': '留言墙',
   '/gifs': 'GIF 表情包',
   '/account': '我的账号',
+  '/reminders': '纪念日提醒',
 };
 
 function Brand() {
@@ -222,6 +224,10 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <History size={18} />
             <span>最近使用</span>
           </Link>
+          <NavLink className="nav-item" to="/reminders">
+            <CalendarClock size={18} />
+            <span>纪念日提醒</span>
+          </NavLink>
           <div className="nav-section-label">
             探索工具 <span>按分类浏览</span>
           </div>

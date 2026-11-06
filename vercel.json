@@ -4,7 +4,10 @@
   "framework": "vite",
   "cleanUrls": true,
   "trailingSlash": false,
-  "functions": { "api/resolve.ts": { "maxDuration": 30 } },
+  "functions": {
+    "api/resolve.ts": { "maxDuration": 30 },
+    "api/reminders.ts": { "maxDuration": 25 }
+  },
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/" }],
   "headers": [
     {

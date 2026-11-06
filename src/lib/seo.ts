@@ -11,6 +11,7 @@ export const PUBLIC_PATHS = [
   '/privacy',
   '/wall',
   '/gifs',
+  '/reminders',
   ...tools.map((tool) => `/tool/${tool.id}`),
 ];
 
@@ -28,7 +29,13 @@ export function getPageSeo(pathname: string, search = ''): PageSeo {
   const known = PUBLIC_PATHS.includes(path);
   const privatePage = path === '/account' || path === '/admin' || path.startsWith('/admin/');
   const communityTitle =
-    path === '/wall' ? '留言墙 · 轻匣' : path === '/gifs' ? 'GIF 表情包下载 · 轻匣' : '';
+    path === '/wall'
+      ? '留言墙 · 轻匣'
+      : path === '/gifs'
+        ? 'GIF 表情包下载 · 轻匣'
+        : path === '/reminders'
+          ? '纪念日邮件提醒 · 轻匣'
+          : '';
   const personalView =
     path === '/' && ['favorites', 'recent'].includes(new URLSearchParams(search).get('view') || '');
   const title = tool
@@ -55,11 +62,13 @@ export function getPageSeo(pathname: string, search = ''): PageSeo {
           ? '在轻匣留言墙贴一张便利贴，留下工具建议和表情包点子。'
           : path === '/gifs'
             ? '在轻匣浏览和下载免费的 GIF 表情包，欢迎留言提出制作建议。'
-            : path === '/account'
-              ? '登录或注册免费轻匣账号。'
-              : privatePage
-                ? '轻匣站长独立密码保护的统计后台。'
-                : SITE_DESCRIPTION;
+            : path === '/reminders'
+              ? '为生日、纪念日或日常问候挑一张贺卡，写好祝福与收件邮箱，预约到时发送。'
+              : path === '/account'
+                ? '登录或注册免费轻匣账号。'
+                : privatePage
+                  ? '轻匣站长独立密码保护的统计后台。'
+                  : SITE_DESCRIPTION;
   const canonical = `${SITE_ORIGIN}${known || privatePage ? path : '/'}`;
   const robots = privatePage
     ? 'noindex, nofollow'

@@ -22,6 +22,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const About = lazy(() => import('./pages/About'));
 const Account = lazy(() => import('./pages/Account'));
+const Reminders = lazy(() => import('./pages/Reminders'));
 const Wall = lazy(() => import('./pages/Community').then((m) => ({ default: m.Wall })));
 const Gallery = lazy(() => import('./pages/Community').then((m) => ({ default: m.Gallery })));
 const pages: Record<string, ReturnType<typeof lazy>> = {
@@ -197,6 +198,7 @@ export default function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/about" element={<About />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/reminders" element={<Reminders />} />
               <Route path="/wall" element={<Wall />} />
               <Route path="/gifs" element={<Gallery />} />
               <Route path="/admin" element={<Admin />} />

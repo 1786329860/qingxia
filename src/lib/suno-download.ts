@@ -14,37 +14,36 @@ export async function readSunoMedia(
   if (!media || media.kind !== source.kind) throw new Error('歌曲的媒体地址无效。');
   for (let attempt = 0; ; attempt++) {
     signal.throwIfAborted();
-    const idle = new AbortController();
+    const connection = new AbortController();
+    const cancel = () => connection.abort();
+    signal.addEventListener('abort', cancel, { once: true });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const resetIdle = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => idle.abort(), 25_000);
+      timer = setTimeout(cancel, 25_000);
     };
     resetIdle();
     try {
-      return await readMediaAttempt(
-        media,
-        AbortSignal.any([signal, idle.signal]),
-        fetcher,
-        (received, total) => {
-          resetIdle();
-          onProgress(received, total);
-        },
-      );
+      return await readMediaAttempt(media, connection.signal, fetcher, (received, total) => {
+        resetIdle();
+        onProgress(received, total);
+      });
     } catch (error) {
       signal.throwIfAborted();
       const interrupted =
-        idle.signal.aborted ||
+        connection.signal.aborted ||
         error instanceof TypeError ||
         error instanceof IncompleteSunoMediaError;
       if (!interrupted) throw error;
       if (attempt) {
-        if (idle.signal.aborted) throw new Error('Suno 媒体连接长时间没有收到数据，请稍后重试。');
+        if (connection.signal.aborted)
+          throw new Error('Suno 媒体连接长时间没有收到数据，请稍后重试。');
         throw error;
       }
       onRetry();
     } finally {
       clearTimeout(timer);
+      signal.removeEventListener('abort', cancel);
     }
   }
 }

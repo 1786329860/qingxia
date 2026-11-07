@@ -36,6 +36,7 @@ export default function SunoDownloadTool() {
     const controller = new AbortController();
     abort.current = controller;
     const timer = setTimeout(() => controller.abort('timeout'), 300_000);
+    const resolveTimer = setTimeout(() => controller.abort('resolve-timeout'), 25_000);
     const { signal } = controller;
     setError('');
     setResult(null);
@@ -49,9 +50,11 @@ export default function SunoDownloadTool() {
           Authorization: 'Bearer ' + (session?.access_token || ''),
         },
         body: JSON.stringify({ url: url.href }),
-        signal: AbortSignal.any([signal, AbortSignal.timeout(25_000)]),
+        signal,
       });
       const data: SunoSong & { error?: string } = await response.json().catch(() => ({}));
+      clearTimeout(resolveTimer);
+      signal.throwIfAborted();
       if (!response.ok || !Array.isArray(data.sources))
         throw new Error(data.error || '歌曲解析失败，请稍后重试。');
       let failure: unknown = new Error('未找到可保存的音频。');
@@ -67,7 +70,10 @@ export default function SunoDownloadTool() {
             source,
             data.id,
             signal,
-            (received, total) => setProgress({ received, total }),
+            (received, total) => {
+              setStage(status);
+              setProgress({ received, total });
+            },
             () => {
               setStage('媒体连接中断，正在重新连接…');
               setProgress({ received: 0, total: 0 });
@@ -107,18 +113,19 @@ export default function SunoDownloadTool() {
       if (signal.reason === 'unmount') return;
       setError(
         signal.aborted
-          ? signal.reason === 'timeout'
-            ? '下载超时，未保存文件。请稍后重试。'
-            : '已取消，未保存文件。'
-          : cause instanceof DOMException && cause.name === 'TimeoutError'
+          ? signal.reason === 'resolve-timeout'
             ? '读取 Suno 分享页超时，请稍后重试。'
-            : cause instanceof TypeError
-              ? '浏览器无法读取 Suno 媒体，请检查网络后重试。'
-              : errorMessage(cause),
+            : signal.reason === 'timeout'
+              ? '下载超时，未保存文件。请稍后重试。'
+              : '已取消，未保存文件。'
+          : cause instanceof TypeError
+            ? '浏览器无法读取 Suno 媒体，请检查网络后重试。'
+            : errorMessage(cause),
       );
       if (!signal.aborted) trackToolUse('suno-download', 'error');
     } finally {
       clearTimeout(timer);
+      clearTimeout(resolveTimer);
       if (abort.current === controller) abort.current = null;
       if (signal.reason !== 'unmount') setStage('');
     }

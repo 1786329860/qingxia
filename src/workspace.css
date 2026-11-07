@@ -451,9 +451,6 @@ select:focus-visible {
 .pebble-orb-iridescent {
   background: linear-gradient(135deg, #fff6f2 0%, #eef6ff 52%, #f0f9ee 100%);
 }
-.pebble-orb-glass {
-  background: radial-gradient(circle at 30% 30%, #ffffff, #eceae6 70%, #d6d2cb);
-}
 
 .dock-divider {
   width: 1px;

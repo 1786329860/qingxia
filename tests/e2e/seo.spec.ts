@@ -7,7 +7,7 @@ test('站点地图与robots返回真实文件，公开工具完整且不列私�
   expect(robots.status()).toBe(200);
   expect(robots.headers()['content-type']).toContain('text/plain');
   expect(await robots.text()).toContain(`Sitemap: ${SITE_ORIGIN}/sitemap.xml`);
-  expect(await robots.text()).toContain('Disallow: /admin');
+  expect(await robots.text()).not.toContain('/admin');
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.status()).toBe(200);
   expect(sitemap.headers()['content-type']).toMatch(/(?:text|application)\/xml/);

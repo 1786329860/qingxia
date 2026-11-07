@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /admin
 
 Sitemap: https://qingxia.aixiaolv.icu/sitemap.xml

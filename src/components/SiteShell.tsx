@@ -408,10 +408,6 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <ImagePlay size={18} />
             <span>GIF 表情包</span>
           </NavLink>
-          <NavLink className="nav-item" to="/admin">
-            <ShieldCheck size={18} />
-            <span>站长工作台</span>
-          </NavLink>
         </nav>
         <div className="sidebar-bottom">
           <Link to="/privacy" className="privacy-card">
@@ -561,16 +557,6 @@ export default function SiteShell({ children }: { children: ReactNode }) {
               <UserRound size={16} />
             </span>
             <span className="pebble-label">账号</span>
-          </Link>
-          <Link
-            to="/admin"
-            className={`dock-pebble dock-secondary ${location.pathname.startsWith('/admin') ? 'is-active' : ''}`}
-            title="站长工作台"
-          >
-            <span className="pebble-orb pebble-orb-glass">
-              <ShieldCheck size={16} />
-            </span>
-            <span className="pebble-label">后台</span>
           </Link>
         </nav>
 

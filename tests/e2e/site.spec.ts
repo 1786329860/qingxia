@@ -51,6 +51,7 @@ test('首页搜索、收藏与最近使用持久化', async ({ page }) => {
 test('快速搜索键盘操作、弹层焦点和移动导航可用', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 780 });
   await page.goto('/');
+  await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
   const dock = page.getByRole('navigation', { name: '常用入口' });
   const bounds = await dock.boundingBox();
   expect(bounds).toBeTruthy();

@@ -5,12 +5,14 @@ import admin from '../api/admin';
 import resolve from '../api/resolve';
 import community from '../api/community';
 import reminders from '../api/reminders';
+import suno from '../api/suno';
 const handlers: Record<string, typeof admin> = {
   '/api/events': events,
   '/api/admin': admin,
   '/api/resolve': resolve,
   '/api/community': community,
   '/api/reminders': reminders,
+  '/api/suno': suno,
 };
 export function localApi(): Plugin {
   return {

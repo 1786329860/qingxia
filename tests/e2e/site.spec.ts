@@ -90,30 +90,44 @@ test('所有工具路由正常加载且无运行时崩溃', async ({ page }) => 
   }
   expect(errors).toEqual([]);
 });
-test('Suno 分享文案在本地提取，作品按钮只打开官方地址', async ({ page }) => {
+test('Suno 分享文案只提交整理后的链接，点击一次实际下载音频文件', async ({ page }) => {
   const privateLink = 'https://www.suno.com/s/ABcd-3412?tracking=PRIVATE_4321';
+  const songID = 'e1963cf9-86b1-4f92-9c6e-2e03cc3a38c4';
+  const mediaURL = `https://cdn1.suno.ai/${songID}.mp4`;
+  const fixture = await readFile(new URL('fixtures/suno-tone.mp4', import.meta.url));
   const requests: string[] = [];
   page.on('request', (req) => requests.push(req.url() + (req.postData() || '')));
+  await page.route('**/api/suno', async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ url: 'https://suno.com/s/ABcd-3412' });
+    await route.fulfill({
+      json: { id: songID, title: '轻匣样曲', sources: [{ url: mediaURL, kind: 'mp4' }] },
+    });
+  });
+  await page.route(mediaURL, (route) =>
+    route.fulfill({
+      body: fixture,
+      contentType: 'video/mp4',
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Length': String(fixture.length) },
+    }),
+  );
   await page.goto('/tool/suno-download');
   const input = page.getByLabel('Suno 分享链接或文案');
   await input.fill('https://suno.com.evil.example/song/ABcd-3412');
-  await page.getByRole('button', { name: '提取作品链接' }).click();
+  const button = page.getByRole('button', { name: '下载音频', exact: true });
+  await button.click();
   await expect(page.getByText('请粘贴 Suno 的单首歌曲分享链接', { exact: false })).toBeVisible();
-  await input.fill('分享给你这首歌：' + privateLink + '。');
-  await page.getByRole('button', { name: '提取作品链接' }).click();
-  await expect(page.getByRole('link', { name: '打开 Suno 作品' })).toHaveAttribute(
-    'href',
-    'https://suno.com/s/ABcd-3412',
-  );
-  await expect(page.getByRole('link', { name: '打开我的 Suno 资料库' })).toHaveAttribute(
-    'href',
-    'https://suno.com/me',
-  );
-  await expect(page.getByRole('link', { name: '已保存音频？去本地转换格式' })).toHaveAttribute(
-    'href',
-    '/tool/audio-convert',
-  );
-  expect(requests.every((value) => !/suno\.com|PRIVATE_4321/.test(value))).toBe(true);
+  expect(requests.every((value) => !value.includes('/api/suno'))).toBe(true);
+  await input.fill('只在本地的整段文案：' + privateLink + '。');
+  const pending = page.waitForEvent('download');
+  await button.click();
+  const download = await pending;
+  expect(download.suggestedFilename()).toBe('轻匣样曲.m4a');
+  const audio = await readFile((await download.path())!);
+  expect(audio.toString('ascii', 4, 8)).toBe('ftyp');
+  expect(audio.includes(Buffer.from('soun'))).toBe(true);
+  expect(audio.includes(Buffer.from('vide'))).toBe(false);
+  await expect(page.getByRole('button', { name: '再下载一次' })).toBeVisible();
+  expect(requests.every((value) => !/PRIVATE_4321|只在本地/.test(value))).toBe(true);
 });
 test('JSON完整处理、真实下载与匿名事件不含输入', async ({ page }) => {
   const posted: string[] = [];

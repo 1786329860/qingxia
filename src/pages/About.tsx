@@ -27,7 +27,7 @@ export default function About() {
         </h2>
         <p>
           当前版本 0.1.0 · {tools.length} 项工具，包含六类纯本地趣味工具、Suno
-          官方下载入口和实验性抖音链接解析。不提供 AI 生成或付费接口功能。
+          音乐下载和实验性抖音链接解析。不提供 AI 生成或付费接口功能。
         </p>
         {categories.map((category) => (
           <div key={category.id} className="about-tool-group">

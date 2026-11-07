@@ -506,6 +506,38 @@ async function withFFmpeg(
   }
 }
 
+export async function extractVideoAudio(
+  file: File,
+  signal: AbortSignal,
+  stage: (label: string) => void,
+) {
+  const result = await withFFmpeg(
+    file,
+    signal,
+    (_, label) => {
+      if (label) stage(label);
+    },
+    async (engine, input) => {
+      const code = await engine.exec([
+        '-i',
+        input,
+        '-map',
+        '0:a:0',
+        '-vn',
+        '-c:a',
+        'copy',
+        '-movflags',
+        '+faststart',
+        'audio.m4a',
+      ]);
+      if (code !== 0) throw new Error('这个作品的视频没有可保存的音轨。');
+      const blob = await readOutput(engine, 'audio.m4a', 'audio/mp4', 50 * 1024 * 1024);
+      return { blob, name: 'audio.m4a' };
+    },
+  );
+  return result.blob;
+}
+
 async function probeDuration(ffmpeg: FFmpegInstance, input: string): Promise<number> {
   // This core can return -1 from ffprobe even when it writes valid output. Validate
   // this run's result file instead of treating its wrapper status as a duration.

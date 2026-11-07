@@ -142,14 +142,14 @@ export const tools: ToolMeta[] = [
     ArrowLeftRight,
     ['音频', '转码', '转换', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'],
   ),
-  t(
-    'suno-download',
-    'Suno 下载入口',
-    '从分享链接打开 Suno 作品页，通过官方渠道下载。',
-    'link',
-    Music2,
-    ['Suno', '音乐', '分享链接', 'mp3', 'wav', '下载'],
-  ),
+  t('suno-download', 'Suno 音乐下载', '粘贴歌曲分享链接，保存可用的音频文件。', 'link', Music2, [
+    'Suno',
+    '音乐',
+    '分享链接',
+    'mp3',
+    'm4a',
+    '下载',
+  ]),
   t(
     'json',
     'JSON 格式化',

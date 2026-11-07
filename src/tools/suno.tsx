@@ -35,7 +35,7 @@ export default function SunoDownloadTool() {
     }
     const controller = new AbortController();
     abort.current = controller;
-    const timer = setTimeout(() => controller.abort('timeout'), 180_000);
+    const timer = setTimeout(() => controller.abort('timeout'), 300_000);
     const { signal } = controller;
     setError('');
     setResult(null);
@@ -49,7 +49,7 @@ export default function SunoDownloadTool() {
           Authorization: 'Bearer ' + (session?.access_token || ''),
         },
         body: JSON.stringify({ url: url.href }),
-        signal,
+        signal: AbortSignal.any([signal, AbortSignal.timeout(25_000)]),
       });
       const data: SunoSong & { error?: string } = await response.json().catch(() => ({}));
       if (!response.ok || !Array.isArray(data.sources))
@@ -58,18 +58,33 @@ export default function SunoDownloadTool() {
       for (const source of data.sources.slice(0, 2)) {
         signal.throwIfAborted();
         try {
-          setStage(
-            source.kind === 'mp4' ? '正在读取作品视频，随后在浏览器提取音轨…' : '正在下载歌曲音频…',
-          );
+          const status = source.kind === 'mp4' ? '正在读取作品媒体…' : '正在下载歌曲音频…';
+          setStage(status);
           setProgress({ received: 0, total: 0 });
-          let blob = await readSunoMedia(source, data.id, signal, (received, total) =>
-            setProgress({ received, total }),
+          const remux =
+            source.kind === 'mp4' ? import('../lib/suno-remux').catch(() => null) : null;
+          let blob = await readSunoMedia(
+            source,
+            data.id,
+            signal,
+            (received, total) => setProgress({ received, total }),
+            () => {
+              setStage('媒体连接中断，正在重新连接…');
+              setProgress({ received: 0, total: 0 });
+            },
           );
           if (source.kind === 'mp4') {
-            setStage('正在加载音频提取工具…');
+            setStage('正在提取音轨…');
             setProgress({ received: 0, total: 0 });
-            const { extractVideoAudio } = await import('./media');
-            blob = await extractVideoAudio(new File([blob], 'suno.mp4'), signal, setStage);
+            const fast = await remux;
+            const audio = await fast?.remuxSunoAac(blob, signal).catch(() => null);
+            signal.throwIfAborted();
+            if (audio) {
+              blob = audio;
+            } else {
+              const { extractVideoAudio } = await import('./media');
+              blob = await extractVideoAudio(new File([blob], 'suno.mp4'), signal, setStage);
+            }
           }
           signal.throwIfAborted();
           const title =
@@ -95,9 +110,11 @@ export default function SunoDownloadTool() {
           ? signal.reason === 'timeout'
             ? '下载超时，未保存文件。请稍后重试。'
             : '已取消，未保存文件。'
-          : cause instanceof TypeError
-            ? '浏览器无法读取 Suno 媒体，请检查网络后重试。'
-            : errorMessage(cause),
+          : cause instanceof DOMException && cause.name === 'TimeoutError'
+            ? '读取 Suno 分享页超时，请稍后重试。'
+            : cause instanceof TypeError
+              ? '浏览器无法读取 Suno 媒体，请检查网络后重试。'
+              : errorMessage(cause),
       );
       if (!signal.aborted) trackToolUse('suno-download', 'error');
     } finally {

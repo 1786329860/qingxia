@@ -82,3 +82,17 @@ test('分享短链只跟随白名单作品路由，拒绝非 Suno 跳转', async
   await expect(resolveSunoSong(start, refused)).rejects.toThrow('无法打开');
   expect(refused).toHaveBeenCalledTimes(1);
 });
+
+test('分享页临时断线时自动重试一次', async () => {
+  const url = new URL(`https://suno.com/song/${id}`);
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockRejectedValueOnce(new TypeError('connection reset'))
+    .mockResolvedValueOnce(
+      new Response(embed({ video_url: video }), {
+        headers: { 'Content-Type': 'text/html' },
+      }),
+    );
+  await expect(resolveSunoSong(url, fetcher)).resolves.toMatchObject({ id });
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});

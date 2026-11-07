@@ -77,7 +77,21 @@ export function parseSunoSong(html: string, id: string): SunoSong {
 }
 
 export async function resolveSunoSong(initial: URL, fetcher = fetch): Promise<SunoSong> {
-  const signal = AbortSignal.timeout(13000);
+  for (const timeout of [8000, 11000]) {
+    try {
+      return await readSunoPage(initial, fetcher, AbortSignal.timeout(timeout));
+    } catch (error) {
+      const transient =
+        error instanceof TypeError ||
+        (error instanceof DOMException && error.name === 'TimeoutError') ||
+        (error instanceof SunoResolveError && error.status === 503);
+      if (!transient) throw error;
+    }
+  }
+  throw new SunoResolveError('读取 Suno 分享页超时或连接不稳定，请稍后重试。', 504);
+}
+
+async function readSunoPage(initial: URL, fetcher: typeof fetch, signal: AbortSignal) {
   let url = initial;
   for (let hop = 0; hop < 4; hop++) {
     const response = await fetcher(url, {
@@ -85,6 +99,10 @@ export async function resolveSunoSong(initial: URL, fetcher = fetch): Promise<Su
       signal,
       headers: { Accept: 'text/html' },
     });
+    if ([500, 502, 503, 504].includes(response.status)) {
+      await response.body?.cancel();
+      throw new SunoResolveError('Suno 分享页暂时无法访问。', 503);
+    }
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       await response.body?.cancel();
       const location = response.headers.get('location');

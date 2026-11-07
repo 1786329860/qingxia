@@ -4,6 +4,7 @@
 
 - React、Vite、pdf-lib、PDF.js、fflate、PapaParse、QRCode、hash-wasm、Lucide、Recharts、Supabase JS 等依赖分别遵循其包内 LICENSE。
 - AVIF 本地编解码使用 `@jsquash/avif`，及其所带的 libavif、AOM 等组件。请同时保留包中的上游许可证。
+- Suno 工具使用 Mediabunny 原样封装 AAC 音轨。Mediabunny 按 MPL-2.0 分发，[npm 发布包含对应源码及许可证](https://registry.npmjs.org/mediabunny/-/mediabunny-1.65.2.tgz)。
 - `@ffmpeg/ffmpeg` 是 FFmpeg 的浏览器 WASM 接口；`@ffmpeg/core` 所分发 FFmpeg 核心具有其自身许可要求，不能仅按 JavaScript 包装器许可理解。所用核心来源为官方 ffmpeg.wasm 发布包，未修改核心。
 
 FFmpeg 与核心构建源码：

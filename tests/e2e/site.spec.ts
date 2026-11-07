@@ -103,13 +103,15 @@ test('Suno 分享文案只提交整理后的链接，点击一次实际下载音
       json: { id: songID, title: '轻匣样曲', sources: [{ url: mediaURL, kind: 'mp4' }] },
     });
   });
-  await page.route(mediaURL, (route) =>
-    route.fulfill({
+  let mediaAttempts = 0;
+  await page.route(mediaURL, (route) => {
+    if (++mediaAttempts === 1) return route.abort('connectionreset');
+    return route.fulfill({
       body: fixture,
       contentType: 'video/mp4',
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Length': String(fixture.length) },
-    }),
-  );
+    });
+  });
   await page.goto('/tool/suno-download');
   const input = page.getByLabel('Suno 分享链接或文案');
   await input.fill('https://suno.com.evil.example/song/ABcd-3412');
@@ -126,6 +128,8 @@ test('Suno 分享文案只提交整理后的链接，点击一次实际下载音
   expect(audio.toString('ascii', 4, 8)).toBe('ftyp');
   expect(audio.includes(Buffer.from('soun'))).toBe(true);
   expect(audio.includes(Buffer.from('vide'))).toBe(false);
+  expect(mediaAttempts).toBe(2);
+  expect(requests.every((value) => !value.includes('/ffmpeg/'))).toBe(true);
   await expect(page.getByRole('button', { name: '再下载一次' })).toBeVisible();
   expect(requests.every((value) => !/PRIVATE_4321|只在本地/.test(value))).toBe(true);
 });

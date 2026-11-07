@@ -1,14 +1,60 @@
 import { sunoMedia, type SunoMedia } from './suno-links';
 
+class IncompleteSunoMediaError extends Error {}
+
 export async function readSunoMedia(
   source: SunoMedia,
   id: string,
   signal: AbortSignal,
   onProgress: (received: number, total: number) => void,
+  onRetry: () => void,
   fetcher = fetch,
 ) {
   const media = sunoMedia(source.url, id);
   if (!media || media.kind !== source.kind) throw new Error('歌曲的媒体地址无效。');
+  for (let attempt = 0; ; attempt++) {
+    signal.throwIfAborted();
+    const idle = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const resetIdle = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => idle.abort(), 25_000);
+    };
+    resetIdle();
+    try {
+      return await readMediaAttempt(
+        media,
+        AbortSignal.any([signal, idle.signal]),
+        fetcher,
+        (received, total) => {
+          resetIdle();
+          onProgress(received, total);
+        },
+      );
+    } catch (error) {
+      signal.throwIfAborted();
+      const interrupted =
+        idle.signal.aborted ||
+        error instanceof TypeError ||
+        error instanceof IncompleteSunoMediaError;
+      if (!interrupted) throw error;
+      if (attempt) {
+        if (idle.signal.aborted) throw new Error('Suno 媒体连接长时间没有收到数据，请稍后重试。');
+        throw error;
+      }
+      onRetry();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
+async function readMediaAttempt(
+  media: SunoMedia,
+  signal: AbortSignal,
+  fetcher: typeof fetch,
+  onProgress: (received: number, total: number) => void,
+) {
   const response = await fetcher(media.url, {
     signal,
     credentials: 'omit',
@@ -47,7 +93,8 @@ export async function readSunoMedia(
       }
     }
     signal.throwIfAborted();
-    if (!size || (length > 0 && length !== size)) throw new Error('媒体传输不完整，未保存文件。');
+    if (!size || (length > 0 && length !== size))
+      throw new IncompleteSunoMediaError('媒体传输不完整，未保存文件。');
     const blob = new Blob(chunks, { type });
     const first = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
     const header = new TextDecoder().decode(first);

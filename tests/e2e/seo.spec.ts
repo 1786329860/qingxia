@@ -1,7 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { GAODAOXIANG_FILENAME, GAODAOXIANG_SHA256 } from '../../src/lib/gaodaoxiang';
+import { GAODAOXIANG_FILENAME } from '../../src/lib/gaodaoxiang';
 import { SITE_ORIGIN, PUBLIC_PATHS } from '../../src/lib/seo';
 import { tools } from '../../src/lib/registry';
 
@@ -63,7 +61,7 @@ test('路由切换同步独立标题、规范地址、品牌标记与个人视�
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
 });
 
-test('访客可从首页进入稿到箱介绍并下载完整的 Windows 安装包', async ({ browser, baseURL }) => {
+test('访客可浏览稿到箱介绍，安装包地址不会公开', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
   try {
     const page = await context.newPage();
@@ -73,12 +71,14 @@ test('访客可从首页进入稿到箱介绍并下载完整的 Windows 安装�
       .filter({ visible: true })
       .click();
     await expect(page.getByRole('heading', { name: '稿到箱', exact: true })).toBeVisible();
-    const pending = page.waitForEvent('download');
-    await page.getByRole('link', { name: '下载 Windows 安装包' }).click();
-    const download = await pending;
-    expect(download.suggestedFilename()).toBe(GAODAOXIANG_FILENAME);
-    const bytes = await readFile((await download.path())!);
-    expect(createHash('sha256').update(bytes).digest('hex')).toBe(GAODAOXIANG_SHA256);
+    await expect(page.getByRole('link', { name: '登录后下载' })).toHaveAttribute(
+      'href',
+      '/account?next=%2Fgaodaoxiang',
+    );
+    await expect(page.getByRole('button', { name: '下载 Windows 安装包' })).toHaveCount(0);
+    await expect(page.locator(`a[href$="${GAODAOXIANG_FILENAME}"]`)).toHaveCount(0);
+    const response = await page.request.get(`/downloads/${GAODAOXIANG_FILENAME}`);
+    expect(response.headers()['content-type']).not.toBe('application/octet-stream');
   } finally {
     await context.close();
   }

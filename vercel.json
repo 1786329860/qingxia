@@ -8,6 +8,13 @@
     "api/resolve.ts": { "maxDuration": 30 },
     "api/reminders.ts": { "maxDuration": 25, "includeFiles": "public/reminder-art/*.png" }
   },
+  "redirects": [
+    {
+      "source": "/downloads/GaodaoXiang-1.2.0-Windows-x64-Setup.exe",
+      "destination": "/gaodaoxiang",
+      "permanent": false
+    }
+  ],
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/" }],
   "headers": [
     {
@@ -31,14 +38,6 @@
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
         { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
-      ]
-    },
-    {
-      "source": "/downloads/:file",
-      "headers": [
-        { "key": "Content-Type", "value": "application/octet-stream" },
-        { "key": "Content-Disposition", "value": "attachment" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     },
     {

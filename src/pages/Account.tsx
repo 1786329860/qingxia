@@ -60,7 +60,9 @@ export default function Account() {
   const navigate = useNavigate();
   const passcardRef = useRef<HTMLDivElement>(null);
   const next = search.get('next') || '/';
-  const destination = /^(?:\/(?:wall|reminders)|\/tool\/[a-z-]+)$/.test(next) ? next : '/';
+  const destination = /^(?:\/(?:wall|reminders|gaodaoxiang)|\/tool\/[a-z-]+)$/.test(next)
+    ? next
+    : '/';
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

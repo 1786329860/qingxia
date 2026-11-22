@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useMember } from '../components/MemberSession';
 import { downloadBlob } from '../lib/files';
 import {
-  GAODAOXIANG_BUCKET,
   GAODAOXIANG_BYTES,
   GAODAOXIANG_FILENAME,
   GAODAOXIANG_SHA256,
@@ -22,9 +21,9 @@ export default function GaodaoXiang() {
     setStatus('正在下载安装包…');
     try {
       const { supabaseClient } = await import('../lib/supabase-auth');
-      const { data, error } = await supabaseClient.storage
-        .from(GAODAOXIANG_BUCKET)
-        .download(GAODAOXIANG_FILENAME, {}, { cache: 'no-store' });
+      const { data, error } = await supabaseClient.functions.invoke<Blob>('gaodaoxiang-download', {
+        method: 'GET',
+      });
       if (error || !data || data.size !== GAODAOXIANG_BYTES)
         throw new Error('Installer unavailable or incomplete');
       downloadBlob(data, GAODAOXIANG_FILENAME);

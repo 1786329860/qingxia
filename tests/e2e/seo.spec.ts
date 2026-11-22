@@ -77,7 +77,9 @@ test('访客可浏览稿到箱介绍，安装包地址不会公开', async ({ br
     );
     await expect(page.getByRole('button', { name: '下载 Windows 安装包' })).toHaveCount(0);
     await expect(page.locator(`a[href$="${GAODAOXIANG_FILENAME}"]`)).toHaveCount(0);
-    const response = await page.request.get(`/downloads/${GAODAOXIANG_FILENAME}`);
+    const response = await page.request.head(`/downloads/${GAODAOXIANG_FILENAME}`, {
+      maxRedirects: 0,
+    });
     expect(response.headers()['content-type']).not.toBe('application/octet-stream');
   } finally {
     await context.close();

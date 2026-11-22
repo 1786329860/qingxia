@@ -1,4 +1,5 @@
 import { getTool, tools } from './registry';
+import { GAODAOXIANG_PATH } from './gaodaoxiang';
 
 export const SITE_ORIGIN = 'https://qingxia.aixiaolv.icu';
 export const SITE_NAME = '轻匣';
@@ -12,6 +13,7 @@ export const PUBLIC_PATHS = [
   '/wall',
   '/gifs',
   '/reminders',
+  GAODAOXIANG_PATH,
   ...tools.map((tool) => `/tool/${tool.id}`),
 ];
 
@@ -35,7 +37,9 @@ export function getPageSeo(pathname: string, search = ''): PageSeo {
         ? 'GIF 表情包下载 · 轻匣'
         : path === '/reminders'
           ? '纪念日邮件提醒 · 轻匣'
-          : '';
+          : path === GAODAOXIANG_PATH
+            ? '稿到箱 Windows 版下载 · 轻匣'
+            : '';
   const personalView =
     path === '/' && ['favorites', 'recent'].includes(new URLSearchParams(search).get('view') || '');
   const title = tool
@@ -64,11 +68,13 @@ export function getPageSeo(pathname: string, search = ''): PageSeo {
             ? '在轻匣浏览和下载免费的 GIF 表情包，欢迎留言提出制作建议。'
             : path === '/reminders'
               ? '为生日、纪念日或日常问候挑一张贺卡，写好祝福与收件邮箱，预约到时发送。'
-              : path === '/account'
-                ? '登录或注册免费轻匣账号。'
-                : privatePage
-                  ? '轻匣站长独立密码保护的统计后台。'
-                  : SITE_DESCRIPTION;
+              : path === GAODAOXIANG_PATH
+                ? '下载稿到箱 Windows 版，保留 AI 稿件的基本排版、封面和配图，定时送进指定公众号的微信草稿箱。'
+                : path === '/account'
+                  ? '登录或注册免费轻匣账号。'
+                  : privatePage
+                    ? '轻匣站长独立密码保护的统计后台。'
+                    : SITE_DESCRIPTION;
   const canonical = `${SITE_ORIGIN}${known || privatePage ? path : '/'}`;
   const robots = privatePage
     ? 'noindex, nofollow'

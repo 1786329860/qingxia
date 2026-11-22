@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { categories, tools, type ToolMeta } from '../lib/registry';
 import { useFavorites, useRecentTools } from '../lib/preferences';
+import { GAODAOXIANG_PATH } from '../lib/gaodaoxiang';
 
 const BreathingBox = lazy(() => import('./BreathingBox'));
 
@@ -327,8 +328,8 @@ export default function Home() {
               <Link to="/reminders" className="washi-link">
                 纪念日提醒 <ArrowUpRight size={13} />
               </Link>
-              <Link to="/account" className="washi-link">
-                轻匣账号 <ArrowUpRight size={13} />
+              <Link to={GAODAOXIANG_PATH} className="washi-link">
+                稿到箱下载 <ArrowUpRight size={13} />
               </Link>
             </div>
             <span className="washi-serial" aria-hidden="true">

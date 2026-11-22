@@ -18,12 +18,14 @@ import { getTool, categories, tools } from './lib/registry';
 import { useFavorites, rememberTool } from './lib/preferences';
 import { trackPageView } from './lib/analytics';
 import { getPageSeo, updateDocumentSeo } from './lib/seo';
+import { GAODAOXIANG_PATH } from './lib/gaodaoxiang';
 
 const Admin = lazy(() => import('./pages/Admin'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const About = lazy(() => import('./pages/About'));
 const Account = lazy(() => import('./pages/Account'));
 const Reminders = lazy(() => import('./pages/Reminders'));
+const GaodaoXiang = lazy(() => import('./pages/GaodaoXiang'));
 const Wall = lazy(() => import('./pages/Community').then((m) => ({ default: m.Wall })));
 const Gallery = lazy(() => import('./pages/Community').then((m) => ({ default: m.Gallery })));
 
@@ -228,6 +230,7 @@ export default function App() {
               <Route path="/about" element={<About />} />
               <Route path="/account" element={<Account />} />
               <Route path="/reminders" element={<Reminders />} />
+              <Route path={GAODAOXIANG_PATH} element={<GaodaoXiang />} />
               <Route path="/wall" element={<Wall />} />
               <Route path="/gifs" element={<Gallery />} />
               <Route path="/admin" element={<Admin />} />

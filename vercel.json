@@ -34,6 +34,14 @@
       ]
     },
     {
+      "source": "/downloads/:file",
+      "headers": [
+        { "key": "Content-Type", "value": "application/octet-stream" },
+        { "key": "Content-Disposition", "value": "attachment" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
       "source": "/ffmpeg/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
     },

@@ -14,6 +14,7 @@ import {
   Layers,
   Menu,
   MessagesSquare,
+  MonitorDown,
   Moon,
   Search,
   ShieldCheck,
@@ -25,12 +26,14 @@ import {
 import { categories, getTool, tools } from '../lib/registry';
 import { useFavorites } from '../lib/preferences';
 import { useMember } from './MemberSession';
+import { GAODAOXIANG_PATH } from '../lib/gaodaoxiang';
 
 const communityPages: Record<string, string> = {
   '/wall': '留言墙',
   '/gifs': 'GIF 表情包',
   '/account': '我的账号',
   '/reminders': '纪念日提醒',
+  [GAODAOXIANG_PATH]: '稿到箱',
 };
 
 function Brand() {
@@ -381,6 +384,10 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           <NavLink className="nav-item" to="/reminders">
             <CalendarClock size={18} />
             <span>纪念日提醒</span>
+          </NavLink>
+          <NavLink className="nav-item" to={GAODAOXIANG_PATH}>
+            <MonitorDown size={18} />
+            <span>稿到箱下载</span>
           </NavLink>
           <div className="nav-section-label">工具分类</div>
           {categories.map((category) => {

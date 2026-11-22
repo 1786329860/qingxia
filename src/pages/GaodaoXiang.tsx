@@ -1,11 +1,12 @@
 import { ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMember } from '../components/MemberSession';
 import { downloadBlob } from '../lib/files';
 import {
   GAODAOXIANG_BYTES,
   GAODAOXIANG_FILENAME,
+  GAODAOXIANG_PART_BYTES,
   GAODAOXIANG_SHA256,
   GAODAOXIANG_VERSION,
 } from '../lib/gaodaoxiang';
@@ -14,24 +15,58 @@ export default function GaodaoXiang() {
   const { session, ready } = useMember();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const transfer = useRef<AbortController | null>(null);
+  useEffect(() => () => transfer.current?.abort(), []);
 
   async function download() {
-    if (!session || busy) return;
+    if (!session || transfer.current) return;
+    const controller = new AbortController();
+    transfer.current = controller;
     setBusy(true);
     setStatus('正在下载安装包…');
     try {
       const { supabaseClient } = await import('../lib/supabase-auth');
-      const { data, error } = await supabaseClient.functions.invoke<Blob>('gaodaoxiang-download', {
-        method: 'GET',
-      });
-      if (error || !data || data.size !== GAODAOXIANG_BYTES)
-        throw new Error('Installer unavailable or incomplete');
-      downloadBlob(data, GAODAOXIANG_FILENAME);
+      const count = Math.ceil(GAODAOXIANG_BYTES / GAODAOXIANG_PART_BYTES);
+      const parts: Blob[] = new Array(count);
+      let next = 0;
+      let received = 0;
+      async function loadParts() {
+        while (!controller.signal.aborted && next < count) {
+          const index = next++;
+          const expected = Math.min(
+            GAODAOXIANG_PART_BYTES,
+            GAODAOXIANG_BYTES - index * GAODAOXIANG_PART_BYTES,
+          );
+          for (let attempt = 0; attempt < 2; attempt++) {
+            const { data, error, response } = await supabaseClient.functions.invoke<Blob>(
+              `gaodaoxiang-download?part=${index}`,
+              { method: 'GET', timeout: 75000, signal: controller.signal },
+            );
+            if (controller.signal.aborted) return;
+            if (!error && data instanceof Blob && data.size === expected) {
+              parts[index] = data;
+              received += data.size;
+              setStatus(`正在下载安装包… ${Math.floor((received / GAODAOXIANG_BYTES) * 100)}%`);
+              break;
+            }
+            if (attempt || (response && response.status >= 400 && response.status < 500))
+              throw new Error('Installer part unavailable');
+          }
+        }
+      }
+      await Promise.all(Array.from({ length: 3 }, loadParts));
+      if (controller.signal.aborted) return;
+      const file = new Blob(parts, { type: 'application/octet-stream' });
+      if (file.size !== GAODAOXIANG_BYTES) throw new Error('Installer incomplete');
+      downloadBlob(file, GAODAOXIANG_FILENAME);
       setStatus('安装包已准备好，请查看浏览器的下载记录。');
     } catch {
-      setStatus('安装包未能完整下载。请确认仍已登录，稍后再试。');
+      if (!controller.signal.aborted) setStatus('安装包未能完整下载。请确认仍已登录，稍后再试。');
     } finally {
-      setBusy(false);
+      const cancelled = controller.signal.aborted;
+      controller.abort();
+      transfer.current = null;
+      if (!cancelled) setBusy(false);
     }
   }
 

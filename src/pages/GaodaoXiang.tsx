@@ -1,12 +1,11 @@
 import { ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useMember } from '../components/MemberSession';
-import { downloadBlob } from '../lib/files';
 import {
-  GAODAOXIANG_BYTES,
+  GAODAOXIANG_DOWNLOAD,
   GAODAOXIANG_FILENAME,
-  GAODAOXIANG_PART_BYTES,
+  GAODAOXIANG_PATH,
   GAODAOXIANG_SHA256,
   GAODAOXIANG_VERSION,
 } from '../lib/gaodaoxiang';
@@ -15,58 +14,33 @@ export default function GaodaoXiang() {
   const { session, ready } = useMember();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  const transfer = useRef<AbortController | null>(null);
-  useEffect(() => () => transfer.current?.abort(), []);
 
   async function download() {
-    if (!session || transfer.current) return;
-    const controller = new AbortController();
-    transfer.current = controller;
+    if (!session || busy) return;
     setBusy(true);
-    setStatus('正在下载安装包…');
+    setStatus('正在准备下载…');
     try {
-      const { supabaseClient } = await import('../lib/supabase-auth');
-      const count = Math.ceil(GAODAOXIANG_BYTES / GAODAOXIANG_PART_BYTES);
-      const parts: Blob[] = new Array(count);
-      let next = 0;
-      let received = 0;
-      async function loadParts() {
-        while (!controller.signal.aborted && next < count) {
-          const index = next++;
-          const expected = Math.min(
-            GAODAOXIANG_PART_BYTES,
-            GAODAOXIANG_BYTES - index * GAODAOXIANG_PART_BYTES,
-          );
-          for (let attempt = 0; attempt < 2; attempt++) {
-            const { data, error, response } = await supabaseClient.functions.invoke<Blob>(
-              `gaodaoxiang-download?part=${index}`,
-              { method: 'GET', timeout: 75000, signal: controller.signal },
-            );
-            if (controller.signal.aborted) return;
-            if (!error && data instanceof Blob && data.size === expected) {
-              parts[index] = data;
-              received += data.size;
-              setStatus(`正在下载安装包… ${Math.floor((received / GAODAOXIANG_BYTES) * 100)}%`);
-              break;
-            }
-            if (attempt || (response && response.status >= 400 && response.status < 500))
-              throw new Error('Installer part unavailable');
-          }
-        }
+      const response = await fetch(GAODAOXIANG_DOWNLOAD, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + session.access_token },
+      });
+      if (response.status === 401) {
+        setStatus('登录已过期，请重新登录后下载。');
+        return;
       }
-      await Promise.all(Array.from({ length: 3 }, loadParts));
-      if (controller.signal.aborted) return;
-      const file = new Blob(parts, { type: 'application/octet-stream' });
-      if (file.size !== GAODAOXIANG_BYTES) throw new Error('Installer incomplete');
-      downloadBlob(file, GAODAOXIANG_FILENAME);
-      setStatus('安装包已准备好，请查看浏览器的下载记录。');
+      if (response.status !== 204) throw new Error('Download authorization failed');
+
+      const link = document.createElement('a');
+      link.href = GAODAOXIANG_DOWNLOAD;
+      link.download = GAODAOXIANG_FILENAME;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setStatus('已发起下载，请在浏览器的下载列表查看进度。');
     } catch {
-      if (!controller.signal.aborted) setStatus('安装包未能完整下载。请确认仍已登录，稍后再试。');
+      setStatus('暂时无法开始下载，请稍后重试。');
     } finally {
-      const cancelled = controller.signal.aborted;
-      controller.abort();
-      transfer.current = null;
-      if (!cancelled) setBusy(false);
+      setBusy(false);
     }
   }
 
@@ -83,7 +57,10 @@ export default function GaodaoXiang() {
             下载 Windows 安装包
           </button>
         ) : ready || typeof window === 'undefined' ? (
-          <Link className="button button-primary" to="/account?next=%2Fgaodaoxiang">
+          <Link
+            className="button button-primary"
+            to={'/account?next=' + encodeURIComponent(GAODAOXIANG_PATH)}
+          >
             登录后下载
           </Link>
         ) : (

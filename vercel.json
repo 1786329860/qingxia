@@ -5,6 +5,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
+    "api/gaodaoxiang.ts": { "maxDuration": 300 },
     "api/resolve.ts": { "maxDuration": 30 },
     "api/reminders.ts": { "maxDuration": 25, "includeFiles": "public/reminder-art/*.png" }
   },

@@ -6,13 +6,15 @@ import resolve from '../api/resolve';
 import community from '../api/community';
 import reminders from '../api/reminders';
 import suno from '../api/suno';
-const handlers: Record<string, typeof admin> = {
+import gaodaoxiang from '../api/gaodaoxiang';
+const handlers: Record<string, (req: VercelRequest, res: VercelResponse) => Promise<unknown>> = {
   '/api/events': events,
   '/api/admin': admin,
   '/api/resolve': resolve,
   '/api/community': community,
   '/api/reminders': reminders,
   '/api/suno': suno,
+  '/api/gaodaoxiang': gaodaoxiang,
 };
 export function localApi(): Plugin {
   return {
@@ -52,9 +54,13 @@ export function localApi(): Plugin {
           };
           await handler(request, response);
         } catch {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: '服务暂不可用，请检查服务端环境配置。' }));
+          if (!res.headersSent && !res.destroyed) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: '服务暂不可用，请检查服务端环境配置。' }));
+          } else if (!res.destroyed && !res.writableEnded) {
+            res.destroy();
+          }
         }
       });
     },

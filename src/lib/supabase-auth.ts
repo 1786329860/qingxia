@@ -6,10 +6,9 @@ const url = import.meta.env.VITE_SUPABASE_URL || 'https://ampgvmvtxutetcpwhztr.s
 const key =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_KiCWD5I2-eQ9ldDeYHNEDA_ImERYYUU';
 
-export const supabaseClient = createClient(url, key, {
+export const authClient = createClient(url, key, {
   auth: { storageKey: memberStorageKey, detectSessionInUrl: false },
-});
-export const authClient = supabaseClient.auth;
+}).auth;
 
 export function recoveryClient() {
   return createClient(url, key, {

@@ -14,6 +14,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { memberAuth, useMember } from '../components/MemberSession';
+import { GAODAOXIANG_DOWNLOAD } from '../lib/gaodaoxiang';
 
 type Mode = 'login' | 'signup' | 'confirm' | 'forgot' | 'recover' | 'reset';
 type RecoveryClient = ReturnType<typeof import('../lib/supabase-auth').recoveryClient>;
@@ -188,7 +189,10 @@ export default function Account() {
     try {
       const { error } = await (await memberAuth()).signOut({ scope: 'local' });
       if (error) setError('退出失败，请重试。');
-      else go('login');
+      else {
+        void fetch(GAODAOXIANG_DOWNLOAD, { method: 'DELETE', keepalive: true }).catch(() => {});
+        go('login');
+      }
     } catch {
       setError('退出失败，请重试。');
     } finally {
